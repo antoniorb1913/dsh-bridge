@@ -1,0 +1,58 @@
+name: CI
+
+# Se ejecuta en cada push a main, en cada pull request y a mano desde la pestaña
+# Actions. Es lo que impide que un cambio rompa el formato sin que nadie mire.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Solo lectura: los tests no necesitan escribir en el repositorio.
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    name: pruebas · Node ${{ matrix.node }} · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: ["22.15.0", "24", "26"]
+
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Versión de Node y de npm
+        run: |
+          node --version
+          npm --version
+
+      - name: Pruebas
+        run: npm test
+
+  empaquetado:
+    name: el paquete se puede publicar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Comprobar lo que entraría en el paquete de npm
+        run: npm pack --dry-run
+
+      - name: El comando arranca y se presenta
+        run: node bin/dsh-bridge.js --version

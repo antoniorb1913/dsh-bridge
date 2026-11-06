@@ -1,5 +1,7 @@
 # dsh-bridge
 
+[![CI](https://github.com/antoniorb1913/dsh-bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/antoniorb1913/dsh-bridge/actions/workflows/ci.yml)
+
 **Exporta e importa conversaciones de DeepSeek Harness entre equipos.**
 Un ZIP portable, un menú en castellano y —lo importante— las tres cosas que la app no hace sola.
 

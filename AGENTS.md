@@ -69,7 +69,7 @@ dsh-bridge/
 ├─ docs/FORMATO.md            el formato v4 por dentro: log, registro, rutas     [T13 ✔]
 ├─ AGENTS.md · TAREAS.md · HISTORIAL.md
 ├─ README.md (ES + EN) · CHANGELOG.md · LICENSE (MIT)                            [T13 ✔]
-└─ .github/workflows/ci.yml
+└─ .github/workflows/ci.yml   Ubuntu+Windows × Node 22.15/24/26 y empaquetado   [T14 ✔]
 ```
 
 `[borrador]` = el fichero existe pero **no está revisado ni probado**; su tarea sigue pendiente y consiste en revisarlo, completarlo y cubrirlo con tests.

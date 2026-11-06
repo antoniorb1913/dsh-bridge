@@ -166,10 +166,16 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] Enlaces internos del README comprobados (los cinco apuntan a ficheros que existen)
 
 ### T14 · CI de GitHub Actions y metadatos del paquete
-**Estado:** ⏳ Pendiente · **Depende de:** T13 · **Rama propuesta:** `chore/t14-ci`
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T13 · **Rama:** `chore/t14-ci` · **Commit:** `chore: CI en Ubuntu y Windows y metadatos del paquete`
+**Archivos:** `.github/workflows/ci.yml`, `package.json`, `README.md`
 
-- Matriz Windows + Ubuntu, Node 22 / 24 / 26, `npm test`
-- Revisar `files`, `engines`, `bin` y `repository` de `package.json`
+- [x] `ci.yml`: matriz **Ubuntu + Windows × Node 22.15 / 24 / 26**, en push a `main`, en cada PR y a mano (`workflow_dispatch`); `permissions: contents: read`
+- [x] Segundo trabajo `empaquetado`: `npm pack --dry-run` y `node bin/dsh-bridge.js --version`, para que un paquete roto se vea antes de publicar
+- [x] `package.json` revisado: `engines` a `>=22.15.0`, `bin` sin `./`, `scripts` con `start` y `doctor`, `homepage` y `bugs`; fuera un `main` que no aportaba (es una CLI)
+- [x] Insignia de CI en el README
+- [x] Comprobado en local lo que hará el CI: `npm pack --dry-run` → **17 ficheros, 38,9 kB** (entran `bin`, `src`, `docs/FORMATO.md`, README, CHANGELOG y LICENSE; **no** entran los tests ni `AGENTS/TAREAS/HISTORIAL`), `--version` responde y **125 pruebas, 0 fallos**
+
+> **Nota:** el YAML solo lo puede validar GitHub. Este PR lo ejecutará en cuanto se suba; si sale rojo, se corrige en esta misma rama y se vuelve a pedir el OK.
 
 ### T15 · Prueba real entre los dos equipos
 **Estado:** ⏳ Pendiente · **Depende de:** T14 · **Rama propuesta:** `test/t15-prueba-real`

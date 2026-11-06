@@ -541,4 +541,36 @@ El valor de este proyecto no es solo el código: es haber entendido por qué una
 4. `npm test` → **125 pruebas, 0 fallos** (la documentación no toca código).
 5. Abre `TAREAS.md:159`: T13 en ✅ y T14 en ⏳.
 
-_(Sin más entradas todavía: la T14 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
+---
+
+## 2026-11-07 · T14 — CI en Ubuntu y Windows, y metadatos del paquete
+
+**Estado:** ✅ Completada
+**Rama:** `chore/t14-ci`
+**Commit:** `chore: CI en Ubuntu y Windows y metadatos del paquete`
+**Archivos:** `.github/workflows/ci.yml`, `package.json`, `README.md`, `TAREAS.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+Añadí el workflow de GitHub Actions: matriz de **Ubuntu y Windows por Node 22.15, 24 y 26** ejecutando `npm test`, más un trabajo que comprueba que el paquete se puede publicar (`npm pack --dry-run` y `--version`). Revisé los metadatos de `package.json` (engines, bin, scripts, homepage, bugs), quité un `main` que no aportaba y puse la insignia de CI en el README.
+
+### 2. ¿Por qué?
+
+Los tests solo se estaban ejecutando a mano y en un sistema. Ese es justo el punto ciego por el que se coló el fallo de `path.basename`: funcionaba en Windows y no en Linux. Con la matriz, ese fallo no llega a `main`, y el trabajo de empaquetado evita publicar un paquete sin el `bin` o con ficheros de más. Es la defensa que queda cuando nadie está mirando.
+
+### 3. ¿Dónde verlo en el código?
+
+- `.github/workflows/ci.yml:1-24` — disparadores, permisos y matriz.
+- `.github/workflows/ci.yml:25-45` — pasos de `pruebas` (checkout, setup-node, versiones, `npm test`).
+- `.github/workflows/ci.yml:47-63` — trabajo `empaquetado`.
+- `package.json:1-40` — `engines`, `bin`, `scripts` (`test`, `start`, `doctor`), `files`, `homepage`, `bugs`.
+- `README.md:3` — insignia de CI.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. En local, lo mismo que hará el CI: `npm pack --dry-run` → **17 ficheros, 38,9 kB**, sin tests.
+2. `node bin/dsh-bridge.js --version` → `dsh-bridge 0.1.0`; `npm test` → 125 y 0 fallos.
+3. **La prueba de verdad es GitHub:** al subir la rama, el PR lanza el workflow. Pestaña *Actions* → `CI` → deben salir verdes los 6 trabajos de la matriz y el de empaquetado. Si algo falla por el YAML, se corrige en `chore/t14-ci` y se vuelve a ejecutar.
+4. Abre `TAREAS.md:168`: T14 en ✅ y T15 en ⏳ (con su nota sobre la validación del YAML).
+
+_(Sin más entradas todavía: la T15 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
