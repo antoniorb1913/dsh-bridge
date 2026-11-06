@@ -56,7 +56,7 @@ dsh-bridge/
 │  ├─ paths.js                ~/.dsh, realpath, nombre de carpeta de workspace     [T4 ✔]
 │  ├─ sessions.js             inventario: cabeceras, títulos, adjuntos citados     [T5 ✔]
 │  ├─ attachments.js          referencias sha256 y copia con dedupe               [T6 ✔]
-│  ├─ registry.js             workspace.json: altas, invariantes, copia previa    [pendiente]
+│  ├─ registry.js             workspace.json: altas, invariantes, copia previa    [T7 ✔]
 │  ├─ compat.js               tipos de evento que entiende el harness destino     [pendiente]
 │  ├─ pack.js                 construir el bundle (ZIP + meta.json)               [pendiente]
 │  └─ import.js               instalar el bundle en el equipo destino             [pendiente]
