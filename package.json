@@ -28,8 +28,7 @@
     "node": ">=22.15"
   },
   "scripts": {
-    "test": "node --test test/",
-    "doctor": "node bin/dsh-bridge.js doctor"
+    "test": "node --test"
   },
   "repository": {
     "type": "git",
