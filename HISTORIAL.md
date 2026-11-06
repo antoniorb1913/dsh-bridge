@@ -233,4 +233,44 @@ El menú «Exportar» empieza justo aquí: si listar tarda o se cuelga, la herra
    ```
 4. Abre `TAREAS.md:57`: T5 en ✅ y T6 en ⏳.
 
-_(Sin más entradas todavía: la T6 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
+---
+
+## 2026-11-07 · T6 — Adjuntos: referencias y copia con deduplicación
+
+**Estado:** ✅ Completada
+**Rama:** `feat/t6-adjuntos`
+**Commit:** `feat: adjuntos con verificación de hash y dedupe`
+**Archivos:** `src/core/attachments.js`, `test/attachments.test.js`, `TAREAS.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+Módulo nuevo para los adjuntos de una conversación: recoger del almacén solo los `sha256` que la conversación cita (exportar), instalarlos en el equipo destino con dedupe y escritura atómica (importar), y avisar de los que faltan sin abortar. El contenido se verifica contra su hash antes de escribirlo y el hash se valida siempre, así que no sirve como ruta. 9 tests nuevos.
+
+### 2. ¿Por qué?
+
+Una conversación son 13.000 eventos y 287 imágenes, pero el almacén tiene adjuntos de otras conversaciones: copiar «todo» multiplicaría el tamaño. Y al revés: recibir un ZIP de fuera y escribir sus ficheros donde diga su nombre es la vía clásica para escribir fuera de sitio; por eso el nombre debe ser un `sha256` válido y el contenido debe cuadrar con él. Faltar una foto no debe impedir recuperar la conversación: se avisa y se sigue.
+
+### 3. ¿Dónde verlo en el código?
+
+- `src/core/attachments.js:24-32` — `AttachmentError`.
+- `src/core/attachments.js:34-47` — `esHashValido` y `rutaAdjunto` (validación que corta rutas).
+- `src/core/attachments.js:49-67` — `huella` y `leerAdjunto`.
+- `src/core/attachments.js:69-113` — `recogerAdjuntos`: solo lo citado, con `faltan` aparte.
+- `src/core/attachments.js:115-153` — `instalarAdjuntos`: dedupe, hash verificado y escritura atómica.
+- `src/core/attachments.js:155-175` — `adjuntosQueFaltan` y `tamanoAdjuntos` (informan sin escribir).
+- `test/attachments.test.js:37-186` — los 9 tests.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 59` / `fail 0`**.
+2. Contra tus adjuntos reales (una línea, esta sí descomprime el log):
+
+   ```powershell
+   cd "D:\Users\MSI-PC\Desktop\dsh\dsh-bridge"
+   node -e "Promise.all([import('./src/core/sessions.js'),import('./src/core/paths.js'),import('./src/core/attachments.js'),import('./src/core/zstd.js'),import('node:fs')]).then(([s,p,a,z,fs])=>{const h=p.resolveHome();const l=s.listSessions(h,{full:true}).filter(x=>(x.attachments||0)>0).slice(0,5);let t=0,f=0,mb=0;for(const x of l){const hs=s.attachmentHashes(z.decodeLogBuffer(fs.readFileSync(x.logPath)));t+=hs.size;f+=a.adjuntosQueFaltan(h,hs).length;mb+=a.tamanoAdjuntos(h,hs).bytes/1048576}console.log('TOTAL:',t,'refs |',f,'ausentes |',mb.toFixed(1),'MB')})"
+   ```
+   Resultado esperado en este equipo: `TOTAL: 587 refs | 0 ausentes | 687.7 MB`.
+3. El test «un adjunto que no cuadra con su hash no entra» (`test/attachments.test.js:88`) demuestra el rechazo del bundle manipulado.
+4. Abre `TAREAS.md:68`: T6 en ✅ y T7 en ⏳.
+
+_(Sin más entradas todavía: la T7 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_

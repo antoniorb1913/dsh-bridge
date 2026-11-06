@@ -66,7 +66,7 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] 12 tests nuevos (50 en total) y **comprobación real: 115 sesiones en 41 ms (rápido) y 907 ms (completo), 111 con título**
 
 ### T6 · Adjuntos: referencias y copia con deduplicación
-**Estado:** 👀 Esperando tu OK · **Depende de:** T5 · **Rama propuesta:** `feat/t6-adjuntos`
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T5 · **Rama:** `feat/t6-adjuntos` · **Commit:** `feat: adjuntos con verificación de hash y dedupe`
 **Archivos:** `src/core/attachments.js`, `test/attachments.test.js`
 
 - [x] Resolver `attachments/v1/objects/<2 hex>/<sha256>` con el hash validado (nada de rutas raras)
