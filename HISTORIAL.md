@@ -355,4 +355,44 @@ Un solo tipo de evento desconocido hace que la app **rechace el log entero** («
 3. Que el ruido no entra: `test/compat.test.js:90` mete `job/registered` en un texto de documentación falso dentro del asar y comprueba que la lista leída no lo incluye.
 4. Abre `TAREAS.md:90`: T8 en ✅ y T9 en ⏳.
 
-_(Sin más entradas todavía: la T9 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
+---
+
+## 2026-11-07 · T9 — Exportar una conversación a un bundle ZIP
+
+**Estado:** ✅ Completada
+**Rama:** `feat/t9-exportar`
+**Commit:** `feat: exporta una conversación a un bundle ZIP con manifiesto`
+**Archivos:** `src/core/pack.js`, `test/pack.test.js`, `TAREAS.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+Módulo de exportación: empaqueta una conversación en un ZIP con `meta.json` (manifiesto con checksum del log, eventos, tipos usados, adjuntos y avisos), `LEEME.txt`, el log y **solo los adjuntos citados**, con nombre `dsh-sesion-<titulo>-<fecha>.zip` y escritura atómica. Si se le pasa la lista de tipos del destino, adapta el log antes de empaquetarlo. 10 tests.
+
+### 2. ¿Por qué?
+
+Es la mitad del programa: sin bundle no hay nada que importar, y el ZIP debe poder auditarse a mano (abrir y ver qué lleva) sin saber leer un log comprimido. Copiar solo los adjuntos citados no es un detalle: una conversación de este equipo cita 559 archivos, pero el almacén tiene miles; empaquetarlo todo multiplicaría el tamaño. El `meta.json` guarda el sha256 del log para que la importación verifique la integridad y para que cualquiera pueda comprobarla con `sha256sum`.
+
+### 3. ¿Dónde verlo en el código?
+
+- `src/core/pack.js:28-33` — `PackError`.
+- `src/core/pack.js:35-37` — `FORMATO` (`dsh-bridge/1`).
+- `src/core/pack.js:39-58` — `slugDe` y `nombreSugerido` (acentos fuera, fecha incluida).
+- `src/core/pack.js:60-87` — `textoLeeme`.
+- `src/core/pack.js:89-188` — `construirBundle`: compatibilidad, adjuntos citados, manifiesto y ZIP en memoria.
+- `src/core/pack.js:190-212` — `exportarSesion`: escritura atómica y nombre final.
+- `test/pack.test.js:48-211` — los 10 tests.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 94` / `fail 0`**.
+2. Exportar de verdad (carpeta temporal; bórrala al terminar):
+
+   ```powershell
+   cd "D:\Users\MSI-PC\Desktop\dsh\dsh-bridge"
+   node -e "Promise.all([import('./src/core/pack.js'),import('./src/core/paths.js'),import('./src/core/sessions.js'),import('./src/core/compat.js'),import('node:fs'),import('node:os'),import('node:path')]).then(([pk,p,s,c,fs,os,path])=>{const h=p.resolveHome();const k=c.tiposDesdeAsar(p.findAppAsar());const l=s.listSessions(h,{full:true}).filter(x=>(x.attachments||0)>0);const x=l.find(y=>y.label.includes('tarjeta'));const d=fs.mkdtempSync(path.join(os.tmpdir(),'prueba-'));const r=pk.exportarSesion(h,x.id,d,{tiposConocidos:k,origenCompat:'asar'});console.log(path.basename(r.ruta),'|',(r.bytes/1024).toFixed(0),'KB | adjuntos:',r.meta.adjuntos.length);console.log('carpeta:',d)})"
+   ```
+   Resultado comprobado: `dsh-sesion-organizar-proyecto-tarjeta-para-netlify-20261107.zip | 4182 KB | adjuntos: 14`.
+3. Abre el ZIP con doble clic: dentro están `meta.json`, `LEEME.txt`, `session/…` y `attachments/objects/…`. El `LEEME.txt` explica qué es y cómo importarlo.
+4. Abre `TAREAS.md:105`: T9 en ✅ y T10 en ⏳.
+
+_(Sin más entradas todavía: la T10 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_

@@ -103,12 +103,16 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 ## Fase 2 — Exportar e importar
 
 ### T9 · Exportar: bundle ZIP + `meta.json`
-**Estado:** ⏳ Pendiente · **Depende de:** T3, T5, T6 · **Rama propuesta:** `feat/t9-exportar`
-**`src/core/pack.js`**
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T3, T5, T6 · **Rama:** `feat/t9-exportar` · **Commit:** `feat: exporta una conversación a un bundle ZIP con manifiesto`
+**Archivos:** `src/core/pack.js`, `test/pack.test.js`
 
-- `meta.json`: versión del tool, fecha, cabecera de la sesión, workspace de origen, tipos de evento usados, adjuntos con tamaño y checksum
-- Contenido: `session/session.v<N>.jsonl.zstd`, `attachments/objects/<2>/<sha256>`, `LEEME.txt`
-- Tests: bundle completo, sesión sin adjuntos, checksum correcto
+- [x] Bundle: `meta.json`, `LEEME.txt`, `session/session.v<N>.jsonl.zstd` y **solo** los adjuntos citados
+- [x] `meta.json` con checksum del log, nº de eventos, tipos usados, adjuntos con tamaño y rutas, procedencia y avisos
+- [x] Nombre seguro y previsible: `dsh-sesion-<titulo-sin-acentos>-<AAAAMMDD>.zip`
+- [x] Adaptación de compatibilidad integrada: marca `ignorable` lo que el destino no conoce y lo anota en el manifiesto (`adaptar:false` para no tocar nada)
+- [x] Avisos sin abortar: adjuntos ausentes en el almacén
+- [x] Escritura atómica del ZIP (sin `.tmp` sueltos) y errores claros si la sesión no existe o el log está roto
+- [x] 10 tests nuevos (94 en total) y **exportación real: 17 entradas, 4,1 MB, 174 ms, 2.530 eventos, 14 adjuntos**
 
 ### T10 · Importar: colocar, reescribir ruta y registrar
 **Estado:** ⏳ Pendiente · **Depende de:** T7, T8, T9 · **Rama propuesta:** `feat/t10-importar`
