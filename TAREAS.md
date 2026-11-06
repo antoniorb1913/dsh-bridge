@@ -77,13 +77,15 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] 9 tests nuevos (59 en total) y **comprobación real: 5 sesiones con adjuntos, 587 referencias, 0 ausentes**
 
 ### T7 · Registro de workspaces (`storages/workspace.json`)
-**Estado:** ⏳ Pendiente · **Depende de:** T4 · **Rama propuesta:** `feat/t7-registro`
-**`src/core/registry.js`**
+**Estado:** 👀 Esperando tu OK · **Depende de:** T4 · **Rama propuesta:** `feat/t7-registro`
+**Archivos:** `src/core/registry.js`, `test/registry.test.js`
 
-- Leer y validar el dominio `workspace` v2 (orden, ruta única, sesión contada una vez)
-- Alta de workspace y asignación de sesión, idempotente
-- Copia previa (`.bak-<fecha>`) y escritura atómica
-- Tests: alta nueva, repetida, sesión duplicada en dos workspaces, registro inexistente
+- [x] Leer y validar el dominio `workspace` v2: orden que cubre la tabla, ruta única, sesión contada una sola vez (los tres motivos por los que la app no arrancaría)
+- [x] Alta de workspace y asignación de sesión, **idempotente** (repetir no duplica ni toca `updatedAt`); reutiliza el workspace si la ruta solo cambia de mayúsculas o separadores
+- [x] Desarchiva la sesión al instalarla y limpia la marca `pendingMutation`
+- [x] Se niega a contar una sesión en dos workspaces y a escribir con la app abierta
+- [x] Copia previa `.bak-<AAAAMMDDhhmmss>` y escritura atómica (`tmp` + `rename`)
+- [x] 15 tests nuevos (74 en total) y **lectura real del registro de este PC: 0 problemas, 4 workspaces, 8 sesiones, y la del bar sale idempotente en seco**
 
 ### T8 · Compatibilidad de tipos de evento
 **Estado:** ⏳ Pendiente · **Depende de:** T2 · **Rama propuesta:** `feat/t8-compat`
