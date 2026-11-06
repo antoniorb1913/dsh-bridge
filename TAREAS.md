@@ -77,7 +77,7 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] 9 tests nuevos (59 en total) y **comprobación real: 5 sesiones con adjuntos, 587 referencias, 0 ausentes**
 
 ### T7 · Registro de workspaces (`storages/workspace.json`)
-**Estado:** 👀 Esperando tu OK · **Depende de:** T4 · **Rama propuesta:** `feat/t7-registro`
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T4 · **Rama:** `feat/t7-registro` · **Commit:** `feat: registro de workspaces con invariantes y copia previa`
 **Archivos:** `src/core/registry.js`, `test/registry.test.js`
 
 - [x] Leer y validar el dominio `workspace` v2: orden que cubre la tabla, ruta única, sesión contada una sola vez (los tres motivos por los que la app no arrancaría)
