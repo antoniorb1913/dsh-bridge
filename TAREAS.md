@@ -45,13 +45,14 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] Comprobado contra las herramientas de Windows en los dos sentidos (Expand-Archive y Compress-Archive)
 
 ### T4 · Rutas de `~/.dsh` y nombre de carpeta de workspace
-**Estado:** ⏳ Pendiente · **Depende de:** T1, T2 · **Rama propuesta:** `feat/t4-rutas-workspace`
-**Borrador ya escrito:** `src/core/paths.js`
+**Estado:** ✅ Completada (2026-11-06) · **Depende de:** T1, T2 · **Rama:** `feat/t4-rutas-workspace` · **Commit:** `feat: resuelve rutas de DSH y codifica el nombre de carpeta del workspace`
+**Archivos:** `src/core/paths.js`, `test/paths.test.js`
 
-- Localizar `~/.dsh` (`--dsh-home`, `DSH_HOME`, `%USERPROFILE%`)
-- `realpath` y comparación de rutas como Windows
-- Codificador de carpeta (`D:\...\web` → `--D-Users-...-web--`) y **verificación contra las sesiones reales** del equipo
-- Tests con rutas de Windows, Linux y WSL, espacios incluidos
+- [x] Localizar `~/.dsh` (`--dsh-home`, `DSH_HOME`, `~/.dsh`): si indicas carpeta, **se respeta o es error**; ya no cae en silencio a `~/.dsh`
+- [x] `canonicalize` con `realpath` y mensaje claro si la ruta no existe; `samePath` sin distinguir mayúsculas, separadores ni barra final
+- [x] Codificador de carpeta verificado contra **las 115 sesiones reales de este PC** (12 carpetas): **0 desajustes**
+- [x] `findAppAsar` estricto cuando se indica ruta a mano (mejor no adivinar la lista de tipos de evento)
+- [x] 14 tests nuevos (38 en total): Windows, Linux, WSL, espacios, raíz, home falso con una sesión mal colocada
 
 ### T5 · Inventario de sesiones: cabeceras, títulos y adjuntos citados
 **Estado:** ⏳ Pendiente · **Depende de:** T2 · **Rama propuesta:** `feat/t5-inventario`

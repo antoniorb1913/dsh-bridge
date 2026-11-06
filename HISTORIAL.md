@@ -143,4 +143,51 @@ Un ZIP de este proyecto puede acabar **repacketeado a mano en Windows** (abrir, 
 3. Dirección contraria (ya verificada): `Compress-Archive -Path .\src\* -DestinationPath .\windows.zip -Force` y leerlo con `readZip` devuelve las entradas con barras normales y sin error.
 4. Abre `TAREAS.md:37`: T3 en ✅ y T4 en ⏳.
 
-_(Sin más entradas todavía: la T4 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
+---
+
+## 2026-11-06 · T4 — Rutas de `~/.dsh` y nombre de carpeta del workspace
+
+**Estado:** ✅ Completada
+**Rama:** `feat/t4-rutas-workspace`
+**Commit:** `feat: resuelve rutas de DSH y codifica el nombre de carpeta del workspace`
+**Archivos:** `src/core/paths.js`, `test/paths.test.js`, `TAREAS.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+Revisé el módulo de rutas, lo dejé estricto donde tocaba y le puse 14 tests. Lo importante: he comprobado el codificador del nombre de carpeta contra **las 115 sesiones reales** de este equipo (12 carpetas de workspace) y **no hay ni un desajuste**: partiendo del `cwd` de cada log, la función reproduce exactamente la carpeta que usa la app.
+
+### 2. ¿Por qué?
+
+Ese nombre de carpeta es donde la importación escribe la conversación. Si el algoritmo derivado de los ejemplos reales estuviera mal en un caso (espacios, rutas de WSL, mayúsculas), la sesión acabaría en una carpeta que DSH no mira y volveríamos al problema del principio: «está en disco, pero no aparece». Verificarlo contra 115 casos reales convierte una suposición en un hecho comprobado.
+
+Y `--dsh-home` ahora se obedece: antes, una ruta mal escrita caía en silencio a `~/.dsh`, justo el fallo silencioso que hay que evitar en una herramienta que escribe en el almacén de otra aplicación.
+
+### 3. ¿Dónde verlo en el código?
+
+- `src/core/paths.js:34-55` — `resolveHome`: ruta indicada = se respeta o error; si no, `DSH_HOME` y `~/.dsh`.
+- `src/core/paths.js:79-87` — `canonicalize` con `realpath` y `HomeError` si no existe.
+- `src/core/paths.js:89-92` — `samePath`: mayúsculas, separadores y barra final.
+- `src/core/paths.js:107-120` — `encodeSessionDirName`: `~0020` para espacios, separadores a `-`, colapso y recorte.
+- `src/core/paths.js:122-153` — `verifySessionDirNames`: el chequeo contra las sesiones guardadas.
+- `src/core/paths.js:187-205` — `findAppAsar` estricto con ruta manual.
+- `test/paths.test.js:42-179` — los 14 tests (casos reales en `:112`, sesión mal colocada en `:129`).
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` en la carpeta del proyecto → **`pass 38` / `fail 0`**.
+2. El chequeo con datos reales:
+
+   ```powershell
+   cd "D:\Users\MSI-PC\Desktop\dsh\dsh-bridge"
+   node -e "import('./src/core/paths.js').then(p=>{const r=p.verifySessionDirNames(p.resolveHome());console.log('sesiones:',r.checked.length,'| desajustes:',r.mismatches.length)})"
+   ```
+   Debe dar `desajustes: 0` (el número de sesiones sube con el uso).
+3. Que una carpeta inventada ya no se ignora:
+
+   ```powershell
+   node -e "import('./src/core/paths.js').then(p=>{try{p.resolveHome('C:/no/existe')}catch(e){console.log(e.message)}})"
+   ```
+   Debe responder *«la carpeta indicada no existe: C:\no\existe»*.
+4. Abre `TAREAS.md:47`: T4 en ✅ y T5 en ⏳.
+
+_(Sin más entradas todavía: la T5 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
