@@ -226,3 +226,22 @@ test("la CLI explica los errores de uso sin volcar trazas", () => {
   assert.equal(sinZona.codigo, 1);
   assert.match(sinZona.stdout, /no existe el fichero/);
 });
+
+test("la ayuda y la versión funcionan sin DeepSeek Harness instalado", () => {
+  // En un equipo sin la app no hay ~/.dsh: los dos comandos más básicos tienen
+  // que responder igual (esto rompió el CI, que corre en un runner vacío).
+  const sinDsh = path.join(carpetaTemporal("dsh-bridge-sin-"), "no-existe");
+
+  const version = cli(["--version", "--dsh-home", sinDsh]);
+  assert.equal(version.codigo, 0, version.stdout + version.stderr);
+  assert.match(version.stdout, /^dsh-bridge \d+\.\d+\.\d+/m);
+
+  const ayuda = cli(["--help", "--dsh-home", sinDsh]);
+  assert.equal(ayuda.codigo, 0, ayuda.stdout + ayuda.stderr);
+  assert.match(ayuda.stdout, /USO/);
+
+  // Y lo que sí necesita la app, falla con un mensaje claro.
+  const listado = cli(["list", "--dsh-home", sinDsh]);
+  assert.equal(listado.codigo, 1);
+  assert.match(listado.stdout, /no existe|no encuentro/);
+});

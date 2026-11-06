@@ -418,15 +418,22 @@ async function menu(home, opciones) {
 
 async function principal(argv) {
   const { comando, posicionales, opciones } = parsearArgumentos(argv);
+
+  // La ayuda y la versión no dependen de tener DeepSeek Harness instalado: se
+  // atienden antes de buscar `~/.dsh`. Si no, `dsh-bridge --version` fallaría en
+  // cualquier equipo donde la app no esté (un runner de CI, por ejemplo).
+  if (comando === "help") {
+    escribir(textoAyuda());
+    return 0;
+  }
+  if (comando === "version") {
+    escribir(`dsh-bridge ${VERSION}`);
+    return 0;
+  }
+
   const home = resolveHome(opciones["dsh-home"]);
 
   switch (comando) {
-    case "help":
-      escribir(textoAyuda());
-      return 0;
-    case "version":
-      escribir(`dsh-bridge ${VERSION}`);
-      return 0;
     case "list":
       return comandoList(opciones);
     case "export":
