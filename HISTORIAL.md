@@ -102,4 +102,45 @@ La importación **siempre** reescribe el log (hay que cambiar el `cwd`), así qu
 4. Prueba real (opcional): con el log de tu conversación de la web (54.215.552 caracteres), `decodificar → recomprimir → decodificar` devuelve **texto idéntico** y la cabecera se lee igual antes y después.
 5. Abre `TAREAS.md:28`: T2 en ✅ Completada y T3 en ⏳.
 
-_(Sin más entradas todavía: la T3 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
+---
+
+## 2026-11-06 · T3 — ZIP propio: escribir sin comprimir, leer store y deflate
+
+**Estado:** ✅ Completada
+**Rama:** `feat/t3-zip`
+**Commit:** `feat: lee y escribe ZIP con validación de rutas y compatibilidad Windows`
+**Archivos:** `src/core/zip.js`, `test/zip.test.js`, `TAREAS.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+Revisé el módulo ZIP y le puse 14 tests. Al probarlo contra las herramientas de Windows apareció un fallo real: `Compress-Archive` (y el «Enviar a > carpeta comprimida») escribe los nombres con barra invertida (`carpeta\fichero.txt`), y el lector los rechazaba. Ahora se normalizan a `/` y las entradas de directorio se ignoran. Además se validan las rutas en los dos sentidos y se añadieron límites explícitos.
+
+### 2. ¿Por qué?
+
+Un ZIP de este proyecto puede acabar **repacketeado a mano en Windows** (abrir, meter una foto, volver a comprimir), y entonces el bundle habría dejado de leerse por un detalle de separadores. Y como los nombres de dentro de un ZIP acaban siendo rutas en disco, aceptar `..` o `C:` sería una vía para escribir fuera de `~/.dsh`: eso es lo que la REGLA 3 prohíbe.
+
+### 3. ¿Dónde verlo en el código?
+
+- `src/core/zip.js:36-42` — `ZipError`, el error propio del módulo.
+- `src/core/zip.js:44-58` — `crc32` con tabla (valor de referencia comprobado: `0xCBF43926`).
+- `src/core/zip.js:61-69` — `validarNombreEntrada`: rechaza `..`, rutas absolutas, `C:` y barras invertidas al escribir; al leer las admite y normaliza.
+- `src/core/zip.js:83-140` — `createZip`: `store`, UTF-8, límites de 4 GB y 65.535 entradas.
+- `src/core/zip.js:158-219` — `readZip`: EOCD, directorio central, `store`/`deflate`, normalización de `\`, descarte de directorios, comprobación de tamaños y CRC.
+- `test/zip.test.js:62-176` — los 14 tests (el de Windows en `:139`, el de directorio con `\` en `:96`).
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. En `D:\Users\MSI-PC\Desktop\dsh\dsh-bridge`: `npm test` → debe dar **`pass 24` / `fail 0`** (14 del ZIP + 10 del log).
+2. Que Windows abra lo nuestro: en **PowerShell**, una línea cada vez:
+
+   ```powershell
+   cd "D:\Users\MSI-PC\Desktop\dsh\dsh-bridge"
+   node -e "import('./src/core/zip.js').then(z=>{const fs=require('fs');fs.writeFileSync('prueba.zip',z.createZip([{name:'hola.txt',data:Buffer.from('contenido')}]))})"
+   Expand-Archive .\prueba.zip -DestinationPath .\prueba -Force
+   Get-Content .\prueba\hola.txt
+   ```
+   Debe imprimir `contenido`. Luego borra `prueba.zip` y la carpeta `prueba`.
+3. Dirección contraria (ya verificada): `Compress-Archive -Path .\src\* -DestinationPath .\windows.zip -Force` y leerlo con `readZip` devuelve las entradas con barras normales y sin error.
+4. Abre `TAREAS.md:37`: T3 en ✅ y T4 en ⏳.
+
+_(Sin más entradas todavía: la T4 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
