@@ -52,7 +52,7 @@ dsh-bridge/
 ├─ bin/dsh-bridge.js          CLI: list, export, import, doctor
 ├─ src/core/
 │  ├─ zstd.js                 frames Zstandard, cabecera, comprimir/descomprimir  [T2 ✔]
-│  ├─ zip.js                  ZIP propio: escribir (store) y leer (store/deflate)  [borrador]
+│  ├─ zip.js                  ZIP propio: escribir (store) y leer (store/deflate)  [T3 ✔]
 │  ├─ paths.js                ~/.dsh, realpath, nombre de carpeta de workspace     [borrador]
 │  ├─ sessions.js             inventario: cabeceras, títulos, adjuntos citados     [borrador]
 │  ├─ attachments.js          referencias sha256 y copia con dedupe               [pendiente]

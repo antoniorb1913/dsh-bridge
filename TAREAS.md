@@ -35,11 +35,14 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] Comprobado con un log real (54.215.552 caracteres): recomprimir y volver a leer devuelve el texto idéntico
 
 ### T3 · ZIP propio (escribir sin comprimir, leer store y deflate)
-**Estado:** ⏳ Pendiente · **Depende de:** T1 · **Rama propuesta:** `feat/t3-zip`
-**Borrador ya escrito:** `src/core/zip.js`
+**Estado:** ✅ Completada (2026-11-06) · **Depende de:** T1 · **Rama:** `feat/t3-zip` · **Commit:** `feat: lee y escribe ZIP con validación de rutas y compatibilidad Windows`
+**Archivos:** `src/core/zip.js`, `test/zip.test.js`
 
-- Revisar CRC32, cabeceras local/central/EOCD y la lectura por directorio central
-- Tests: ida y vuelta con varios ficheros, acentos y rutas con `/`, ZIP corrupto, ZIP hecho con otra herramienta (deflate)
+- [x] Revisado: CRC32, cabeceras local/central/EOCD, lectura por directorio central y límites (4 GB / 65.535 entradas)
+- [x] **Fallo corregido:** Windows (`Compress-Archive`, «Enviar a > carpeta comprimida») escribe los nombres con `\`; ahora se normalizan a `/` al leer y las entradas de directorio se ignoran
+- [x] Rutas peligrosas (`..`, absolutas, `C:`) rechazadas al leer **y** al escribir
+- [x] Tests: 14 casos, incluidos ZIP con deflate de otra herramienta, CRC alterado, ZIP64 y nombres con emoji
+- [x] Comprobado contra las herramientas de Windows en los dos sentidos (Expand-Archive y Compress-Archive)
 
 ### T4 · Rutas de `~/.dsh` y nombre de carpeta de workspace
 **Estado:** ⏳ Pendiente · **Depende de:** T1, T2 · **Rama propuesta:** `feat/t4-rutas-workspace`
@@ -107,13 +110,17 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - `--dry-run`, `--force`, aviso si la app está abierta
 - Tests: importación limpia, cambio de ruta, workspace ya existente, bundle dañado
 
-### T11 · CLI en español: `list`, `export`, `import`, `doctor`
+### T11 · CLI en español + menú interactivo
 **Estado:** ⏳ Pendiente · **Depende de:** T10 · **Rama propuesta:** `feat/t11-cli`
 **`bin/dsh-bridge.js`**
 
+- `dsh-bridge` **sin argumentos abre el menú**: Exportar · Importar ZIP · Enviar por red · Recibir por red · Diagnóstico · Salir
+- Exportar: lista numerada de conversaciones (título, workspace, fecha, tamaño, nº de imágenes), selección múltiple (`1,3,5`), destino del ZIP y barra de progreso
+- Importar: ruta del ZIP, resumen de lo que trae y elección de workspace destino; si la app está abierta, ofrece cerrarla y volver a abrirla al terminar
+- Los mismos comandos sin menú para automatizar: `list`, `export`, `import`, `send`, `receive`, `doctor`
 - Ayuda, códigos de salida, mensajes claros y sin jerga
 - `doctor`: comprueba `~/.dsh`, valida el codificador de carpetas, detecta la app abierta y la versión del harness
-- Tests de humo de los cuatro comandos
+- Tests de humo de los comandos y del menú (entrada simulada por stdin)
 
 ### T12 · Tests de integración con `DSH_HOME` falso
 **Estado:** ⏳ Pendiente · **Depende de:** T11 · **Rama propuesta:** `test/t12-integracion`
