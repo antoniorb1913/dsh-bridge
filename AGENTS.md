@@ -53,7 +53,7 @@ dsh-bridge/
 ├─ src/core/
 │  ├─ zstd.js                 frames Zstandard, cabecera, comprimir/descomprimir  [T2 ✔]
 │  ├─ zip.js                  ZIP propio: escribir (store) y leer (store/deflate)  [T3 ✔]
-│  ├─ paths.js                ~/.dsh, realpath, nombre de carpeta de workspace     [borrador]
+│  ├─ paths.js                ~/.dsh, realpath, nombre de carpeta de workspace     [T4 ✔]
 │  ├─ sessions.js             inventario: cabeceras, títulos, adjuntos citados     [borrador]
 │  ├─ attachments.js          referencias sha256 y copia con dedupe               [pendiente]
 │  ├─ registry.js             workspace.json: altas, invariantes, copia previa    [pendiente]

@@ -15,30 +15,41 @@ import { execFileSync } from "node:child_process";
 import { readLogHeader } from "./zstd.js";
 
 export class HomeError extends Error {
-  constructor(message) {
-    super(message);
+  constructor(message, options) {
+    super(message, options);
     this.name = "HomeError";
   }
 }
 
 /**
  * Localiza `~/.dsh`.
+ *
+ * Si el usuario indica una carpeta (`--dsh-home`), se respeta al pie de la
+ * letra: si no existe, es un error, no una excusa para usar otra. Caer en
+ * silencio al `~/.dsh` de siempre es cómo se importan sesiones en el sitio
+ * equivocado.
  * @param {string} [explicit]
  * @returns {string}
  */
 export function resolveHome(explicit) {
-  const candidates = [];
-  if (explicit) candidates.push(explicit);
-  if (process.env.DSH_HOME) candidates.push(process.env.DSH_HOME);
-  candidates.push(path.join(os.homedir(), ".dsh"));
-  if (process.env.USERPROFILE) candidates.push(path.join(process.env.USERPROFILE, ".dsh"));
+  if (explicit) {
+    const resuelto = path.resolve(explicit);
+    if (!fs.existsSync(resuelto)) throw new HomeError(`la carpeta indicada no existe: ${resuelto}`);
+    if (!fs.statSync(resuelto).isDirectory()) throw new HomeError(`la ruta indicada no es una carpeta: ${resuelto}`);
+    return resuelto;
+  }
 
-  for (const candidate of candidates) {
-    const resolved = path.resolve(candidate);
-    if (fs.existsSync(resolved) && fs.statSync(resolved).isDirectory()) return resolved;
+  const candidatos = [];
+  if (process.env.DSH_HOME) candidatos.push(process.env.DSH_HOME);
+  candidatos.push(path.join(os.homedir(), ".dsh"));
+  if (process.env.USERPROFILE) candidatos.push(path.join(process.env.USERPROFILE, ".dsh"));
+
+  for (const candidato of candidatos) {
+    const resuelto = path.resolve(candidato);
+    if (fs.existsSync(resuelto) && fs.statSync(resuelto).isDirectory()) return resuelto;
   }
   throw new HomeError(
-    `no encuentro la carpeta de datos de DeepSeek Harness (probé: ${candidates.join(", ")}). ` +
+    `no encuentro la carpeta de datos de DeepSeek Harness (probé: ${candidatos.join(", ")}). ` +
       "Usa --dsh-home para indicarla."
   );
 }
@@ -59,10 +70,19 @@ export function projCachePath(home, sessionId) {
   return path.join(home, "storages", "session_projcache", "sessions", `${sessionId}.json`);
 }
 
-/** Ruta absoluta canónica, como la calcula la app (`realpath`). */
+/**
+ * Ruta absoluta canónica, como la calcula la app (`realpath`).
+ * Es lo que se compara: `D:\Web` y `d:\web\` son la misma carpeta.
+ * @param {string} target
+ * @returns {string}
+ */
 export function canonicalize(target) {
-  const resolved = path.resolve(target);
-  return fs.realpathSync.native(resolved);
+  const resuelto = path.resolve(target);
+  try {
+    return fs.realpathSync.native(resuelto);
+  } catch (error) {
+    throw new HomeError(`la ruta no existe o no se puede resolver: ${resuelto}`, { cause: error });
+  }
 }
 
 /** Compara rutas como lo hace Windows: sin distinguir mayúsculas ni separadores. */
@@ -157,12 +177,17 @@ export function isAppRunning() {
 /**
  * Busca el `app.asar` de la instalación (de ahí se leen los tipos de evento
  * que entiende esa versión del harness).
+ *
+ * Con una ruta indicada a mano se es estricto: o es esa, o no hay. Buscar por
+ * libre y devolver otra instalación daría una lista de tipos equivocada sin
+ * que nadie se diera cuenta.
  * @param {string} [explicit]
  * @returns {string | undefined}
  */
 export function findAppAsar(explicit) {
+  if (explicit) return fs.existsSync(explicit) ? explicit : undefined;
+
   const candidates = [];
-  if (explicit) candidates.push(explicit);
   if (process.env.DSH_APP_ASAR) candidates.push(process.env.DSH_APP_ASAR);
   if (process.platform === "win32") {
     const local = process.env.LOCALAPPDATA ?? path.join(os.homedir(), "AppData", "Local");
