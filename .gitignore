@@ -1,0 +1,10 @@
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
+
+# Bundles de sesiones: contienen conversaciones privadas, nunca al repo
+*.zip
+!test/fixtures/*.zip
+salida/
+tmp/
