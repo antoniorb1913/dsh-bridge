@@ -49,7 +49,10 @@ storages/session_projcache/sessions/<session-id>.json   (solo lectura)
 
 ```
 dsh-bridge/
-├─ bin/dsh-bridge.js          CLI: list, export, import, doctor
+├─ bin/dsh-bridge.js          CLI y menú: orquesta, la lógica está en src/core    [T11 ✔]
+├─ src/cli/
+│  ├─ opciones.js             argumentos, alias en castellano y errores de uso    [T11 ✔]
+│  └─ formato.js              tablas, tamaños, fechas y selecciones (1,3 · 2-4)    [T11 ✔]
 ├─ src/core/
 │  ├─ zstd.js                 frames Zstandard, cabecera, comprimir/descomprimir  [T2 ✔]
 │  ├─ zip.js                  ZIP propio: escribir (store) y leer (store/deflate)  [T3 ✔]
