@@ -190,4 +190,47 @@ Y `--dsh-home` ahora se obedece: antes, una ruta mal escrita caía en silencio a
    Debe responder *«la carpeta indicada no existe: C:\no\existe»*.
 4. Abre `TAREAS.md:47`: T4 en ✅ y T5 en ⏳.
 
-_(Sin más entradas todavía: la T5 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
+---
+
+## 2026-11-07 · T5 — Inventario de sesiones: cabeceras, títulos y adjuntos
+
+**Estado:** ✅ Completada
+**Rama:** `feat/t5-inventario`
+**Commit:** `feat: inventario de sesiones con títulos y adjuntos`
+**Archivos:** `src/core/sessions.js`, `test/sessions.test.js`, `TAREAS.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+Revisé el inventario de conversaciones y le puse 12 tests. Ahora lista sin descomprimir (solo la cabecera de cada log) y resuelve el título por tres vías: caché de proyecciones de la app, evento `session/title` del propio log (vale el último) y, como último recurso, el primer mensaje del usuario. También corrige un bucle infinito que congelaba el listado, quita código muerto y ordena de forma estable.
+
+### 2. ¿Por qué?
+
+El menú «Exportar» empieza justo aquí: si listar tarda o se cuelga, la herramienta no sirve. Y sin título no se puede elegir una conversación entre 115. El bucle infinito lo destapó la propia suite al quedarse colgada: era un `regex` sin bandera `g` que nunca avanzaba, así que el programa se habría quedado frito en la primera sesión con título viejo.
+
+### 3. ¿Dónde verlo en el código?
+
+- `src/core/sessions.js:28-58` — `findSessionLogs`: recorre `sessions/` y elige la versión más alta del log.
+- `src/core/sessions.js:65-86` — `readProjectionMeta`: título, `blank` y modelo desde `session_projcache`.
+- `src/core/sessions.js:88-108` — `lineaDelEvento` y `recortarLinea`: búsqueda con `regex` global (aquí estaba el bucle infinito).
+- `src/core/sessions.js:110-149` — `titleFromLog` (el último título gana) y `firstUserPrompt` (con recorte).
+- `src/core/sessions.js:154-206` — `listSessions`: modo rápido y modo `full`, un solo `stat` y orden estable.
+- `src/core/sessions.js:208-241` — `findSession` y `attachmentHashes` (con validación de entrada).
+- `test/sessions.test.js:87-245` — los 12 tests.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` en la carpeta del proyecto → **`pass 50` / `fail 0`**.
+2. Listado rápido (medido en este equipo: 115 sesiones en 35-41 ms):
+
+   ```powershell
+   cd "D:\Users\MSI-PC\Desktop\dsh\dsh-bridge"
+   node -e "import('./src/core/sessions.js').then(async s=>{const p=await import('./src/core/paths.js');const t=Date.now();const l=s.listSessions(p.resolveHome());console.log(l.length,'sesiones en',Date.now()-t,'ms');for(const x of l.slice(0,5))console.log(' -',x.label)})"
+   ```
+3. Modo completo (títulos de reserva y adjuntos): debe dar **`títulos: 111 | con adjuntos: 53`**.
+
+   ```powershell
+   node -e "import('./src/core/sessions.js').then(async s=>{const p=await import('./src/core/paths.js');const l=s.listSessions(p.resolveHome(),{full:true});console.log('títulos:',l.filter(x=>x.title).length,'| con adjuntos:',l.filter(x=>x.attachments>0).length)})"
+   ```
+4. Abre `TAREAS.md:57`: T5 en ✅ y T6 en ⏳.
+
+_(Sin más entradas todavía: la T6 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_

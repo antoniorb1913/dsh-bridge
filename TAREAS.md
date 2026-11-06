@@ -55,13 +55,15 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] 14 tests nuevos (38 en total): Windows, Linux, WSL, espacios, raíz, home falso con una sesión mal colocada
 
 ### T5 · Inventario de sesiones: cabeceras, títulos y adjuntos citados
-**Estado:** ⏳ Pendiente · **Depende de:** T2 · **Rama propuesta:** `feat/t5-inventario`
-**Borrador ya escrito:** `src/core/sessions.js`
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T2 · **Rama:** `feat/t5-inventario` · **Commit:** `feat: inventario de sesiones con títulos y adjuntos`
+**Archivos:** `src/core/sessions.js`, `test/sessions.test.js`
 
-- Listar sesiones sin descomprimir logs completos (solo primer frame)
-- Título desde `session_projcache`, con reserva en el propio log y en el primer mensaje
-- Contar adjuntos citados (`sha256:…`) sin repetir
-- Tests con un `DSH_HOME` falso de tres sesiones
+- [x] Listar sin descomprimir: cabecera del primer frame y `stat` una sola vez por sesión
+- [x] Título desde `session_projcache`; reserva en el log (`session/title`, ahora tolera JSON con espacios y se queda con el último) y en el primer mensaje del usuario
+- [x] Adjuntos citados (`sha256:…`) sin repetir, con validación de entrada
+- [x] **Fallo corregido:** bucle infinito al buscar el último título si el evento venía con espacios (regex sin bandera `g`); lo detectó la propia suite al colgarse
+- [x] Código muerto fuera (`readSessionMeta`); orden estable por fecha y, a igualdad, por id
+- [x] 12 tests nuevos (50 en total) y **comprobación real: 115 sesiones en 41 ms (rápido) y 907 ms (completo), 111 con título**
 
 ### T6 · Adjuntos: referencias y copia con deduplicación
 **Estado:** ⏳ Pendiente · **Depende de:** T5 · **Rama propuesta:** `feat/t6-adjuntos`
