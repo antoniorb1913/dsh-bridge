@@ -88,13 +88,15 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] 15 tests nuevos (74 en total) y **lectura real del registro de este PC: 0 problemas, 4 workspaces, 8 sesiones, y la del bar sale idempotente en seco**
 
 ### T8 · Compatibilidad de tipos de evento
-**Estado:** ⏳ Pendiente · **Depende de:** T2 · **Rama propuesta:** `feat/t8-compat`
-**`src/core/compat.js`**
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T2 · **Rama:** `feat/t8-compat` · **Commit:** `feat: compatibilidad de tipos de evento con el harness destino`
+**Archivos:** `src/core/compat.js`, `test/compat.test.js`
 
-- Lista de tipos que entiende una versión, leída del `app.asar` del equipo destino
-- Marcar como `ignorable` solo lo desconocido, con copia del log original
-- Fallo claro si no se puede averiguar la lista (`--tipos-ignorables` manual)
-- Tests: log con `job/registered`, lista leída de un asar de mentira, log sin cambios
+- [x] Lista de tipos leída del `app.asar` del destino, del **literal** `KNOWN_SESSION_EVENT_TYPES = new Set([...])` (leer «alrededor» metía menciones de la documentación como tipos válidos: la primera versión colaba `job/registered` en un destino que no lo conocía)
+- [x] Orden de precedencia: lista manual → asar → tabla de respaldo (0.2.0-rc.2), informando del origen
+- [x] Marcado `ignorable:true` idempotente, línea a línea, sin tocar el resto y re-parseando cada línea parcheada
+- [x] Comprobación final (`tiposPendientes`) para no escribir un log que el destino rechazaría
+- [x] 10 tests nuevos (84 en total) y **comprobación real: 62 tipos del asar en 38 ms; el log del bar usa 32 tipos y ninguno queda desconocido**
+- [x] **Hallazgo:** este PC ya está en **0.2.1-rc.5** (se actualizó el 29/10), y por eso el log del bar ya no necesita el parche de la semana pasada
 
 ---
 
