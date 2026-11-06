@@ -505,4 +505,40 @@ Hasta ahora cada módulo se probaba por su lado y la coherencia se comprobaba a 
 3. En WSL: `wsl.exe -e bash -lc "cd /mnt/d/Users/MSI-PC/Desktop/dsh/dsh-bridge && node --test 2>&1 | tail -6"` → también 125 y 0 fallos.
 4. Abre `TAREAS.md:144`: T12 en ✅ y T13 en ⏳.
 
-_(Sin más entradas todavía: la T13 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
+---
+
+## 2026-11-07 · T13 — README bilingüe, formato v4 y changelog
+
+**Estado:** ✅ Completada
+**Rama:** `docs/t13-readme`
+**Commit:** `docs: README bilingüe, formato v4 y changelog`
+**Archivos:** `README.md`, `docs/FORMATO.md`, `CHANGELOG.md`, `TAREAS.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+Reescribí el README (dos líneas de GitHub) como presentación real del proyecto en español e inglés, con el problema, requisitos, instalación, menú, comandos, contenido del ZIP, avisos y límites. Añadí `docs/FORMATO.md`, el mapa del formato que descubrimos, y `CHANGELOG.md` con la 0.1.0.
+
+### 2. ¿Por qué?
+
+El valor de este proyecto no es solo el código: es haber entendido por qué una conversación copiada no aparece (registro, ruta y tipos de evento). Eso no estaba escrito en ningún sitio y se perdería. Además, quien llegue al repo sin contexto —o yo dentro de tres meses— necesita saber en un minuto qué es, cómo se usa y qué **no** hace.
+
+### 3. ¿Dónde verlo en el código?
+
+- `README.md:1-120` — qué es, el problema en tres piezas y requisitos.
+- `README.md:121-215` — uso, menú, comandos, avisos de seguridad y contenido del ZIP.
+- `README.md:216-330` — doctor, instalación manual, límites, desarrollo y bloque en inglés.
+- `docs/FORMATO.md:1-60` — dónde vive todo y los frames del log (con la cabecera y su `\n`).
+- `docs/FORMATO.md:61-140` — sobre de eventos, `ignorable` y cómo se lee la lista de tipos del `app.asar` (con la trampa del ruido).
+- `docs/FORMATO.md:141-230` — registro `workspace` v2, tres invariantes y codificación de carpetas.
+- `docs/FORMATO.md:231-300` — adjuntos, caché de proyecciones y tabla de riesgos.
+- `CHANGELOG.md:1-80` — 0.1.0 con lo añadido, los seis fallos corregidos y lo pendiente.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. Abre el README en GitHub (pestaña *Code*): debe verse la presentación, el menú y el bloque en inglés.
+2. Los cinco enlaces internos apuntan a ficheros que existen (`AGENTS.md`, `TAREAS.md`, `HISTORIAL.md`, `docs/FORMATO.md`, `LICENSE`); comprobado con un script de este mismo paso.
+3. Busca «`job/registered`» en `docs/FORMATO.md`: ahí está explicado por qué el harness rechazaba el log y la trampa de leer «alrededor» del símbolo en el asar.
+4. `npm test` → **125 pruebas, 0 fallos** (la documentación no toca código).
+5. Abre `TAREAS.md:159`: T13 en ✅ y T14 en ⏳.
+
+_(Sin más entradas todavía: la T14 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
