@@ -129,16 +129,17 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] Suite verde **en Windows (Node 26) y en WSL/Linux (Node 24)**: 105 pruebas, 0 fallos en los dos
 
 ### T11 · CLI en español + menú interactivo
-**Estado:** ⏳ Pendiente · **Depende de:** T10 · **Rama propuesta:** `feat/t11-cli`
-**`bin/dsh-bridge.js`**
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T10 · **Rama:** `feat/t11-cli` · **Commit:** `feat: CLI con menú para exportar e importar conversaciones`
+**Archivos:** `bin/dsh-bridge.js`, `src/cli/opciones.js`, `src/cli/formato.js`, `test/cli.test.js`
 
-- `dsh-bridge` **sin argumentos abre el menú**: Exportar · Importar ZIP · Enviar por red · Recibir por red · Diagnóstico · Salir
-- Exportar: lista numerada de conversaciones (título, workspace, fecha, tamaño, nº de imágenes), selección múltiple (`1,3,5`), destino del ZIP y barra de progreso
-- Importar: ruta del ZIP, resumen de lo que trae y elección de workspace destino; si la app está abierta, ofrece cerrarla y volver a abrirla al terminar
-- Los mismos comandos sin menú para automatizar: `list`, `export`, `import`, `send`, `receive`, `doctor`
-- Ayuda, códigos de salida, mensajes claros y sin jerga
-- `doctor`: comprueba `~/.dsh`, valida el codificador de carpetas, detecta la app abierta y la versión del harness
-- Tests de humo de los comandos y del menú (entrada simulada por stdin)
+- [x] `dsh-bridge` **sin argumentos abre el menú**: Exportar · Importar ZIP · Enviar por red (v0.2) · Recibir por red (v0.2) · Diagnóstico · Salir; si no hay terminal interactiva, enseña la ayuda en vez de colgarse
+- [x] Exportar: tabla de conversaciones (título, carpeta, fecha, tamaño, imágenes), selección múltiple (`1,3,5`, `2-4`), carpeta destino y resumen por fichero
+- [x] Importar: ruta del ZIP, resumen de lo que trae, lista de workspaces registrados + «otra carpeta», y **si la app está abierta ofrece cerrarla, importar y volver a abrirla**
+- [x] Comandos sueltos: `list` (`--rapido` 87 ms / completo 924 ms), `export`, `import` (`--workspace`, `--forzar`, `--seco`), `doctor`, y `send`/`receive` que avisan de que llegan en la v0.2
+- [x] `doctor` real: DSH, app abierta, tipos del asar, sesiones, carpetas verificadas, registro válido y adjuntos ausentes → **«todo en orden»**, código 0
+- [x] Ayuda con ejemplos, alias en castellano (`listar`, `exportar`…) y códigos de salida (0 bien, 1 problemas, 2 error de uso)
+- [x] 12 tests de la CLI (117 en total) y pruebas reales: ayuda, listado, doctor, exportación (4,1 MB, 2.530 eventos, 14 adjuntos) e importación en seco en un `DSH_HOME` falso
+- [x] **Fallo corregido:** al cortar la salida (`| head`) el proceso terminaba con código 1 por `EPIPE`; ahora se cierra limpio
 
 ### T12 · Tests de integración con `DSH_HOME` falso
 **Estado:** ⏳ Pendiente · **Depende de:** T11 · **Rama propuesta:** `test/t12-integracion`

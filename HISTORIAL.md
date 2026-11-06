@@ -434,4 +434,42 @@ Es la mitad que faltaba: sin esto el ZIP es un fichero muerto. Además concentra
 3. Prueba de punta a punta (la ejecuté yo): exportar «Organizar proyecto tarjeta para Netlify» → 4.182 KB, 14 adjuntos; importar en un almacén vacío → 2.530 eventos, 14 adjuntos copiados, ruta reescrita, registro con 1 workspace y 0 problemas; segunda importación rechazada por «ya está instalada».
 4. Abre `TAREAS.md:117`: T10 en ✅ y T11 en ⏳.
 
-_(Sin más entradas todavía: la T11 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
+---
+
+## 2026-11-07 · T11 — CLI con menú para exportar e importar
+
+**Estado:** ✅ Completada
+**Rama:** `feat/t11-cli`
+**Commit:** `feat: CLI con menú para exportar e importar conversaciones`
+**Archivos:** `bin/dsh-bridge.js`, `src/cli/opciones.js`, `src/cli/formato.js`, `test/cli.test.js`, `TAREAS.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+La herramienta ya se puede usar sin saber nada por dentro: `dsh-bridge` sin argumentos abre un menú (Exportar · Importar · Enviar/Recibir de la v0.2 · Diagnóstico · Salir), y los mismos pasos existen como comandos (`list`, `export`, `import`, `doctor`) con alias en castellano. Incluye el diagnóstico real de la instalación y, al importar con la app abierta, ofrece cerrarla, importar y volver a abrirla. 12 tests de la parte que se puede probar sin terminal.
+
+### 2. ¿Por qué?
+
+Todo lo anterior estaba probado pero no se podía usar: hacía falta escribir llamadas a módulos. El menú es lo que convierte la librería en herramienta, y el diagnóstico es lo que evita el «no me sale la conversación»: comprueba de una vez las cuatro cosas que fallaron durante la migración manual (app abierta, carpetas, registro y adjuntos).
+
+### 3. ¿Dónde verlo en el código?
+
+- `bin/dsh-bridge.js:55-75` — carpeta de destino por defecto y lectura de tipos.
+- `bin/dsh-bridge.js:77-156` — `list`, `export` e `import` por consola.
+- `bin/dsh-bridge.js:158-228` — `doctor`: DSH, app, asar, sesiones, carpetas, registro y adjuntos.
+- `bin/dsh-bridge.js:230-255` — `cerrarApp` y `abrirApp` (solo Windows).
+- `bin/dsh-bridge.js:257-418` — menú de exportación e importación.
+- `bin/dsh-bridge.js:419-460` — despacho de comandos y códigos de salida.
+- `src/cli/opciones.js:67-112` — `parsearArgumentos` y `tiposManuales`.
+- `src/cli/formato.js:16-152` — tamaños, fechas, recorte, `parsearSeleccion`, tabla y ayuda.
+- `test/cli.test.js:24-152` — los 12 tests.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 117` / `fail 0`**.
+2. `node bin/dsh-bridge.js --help` → ayuda con comandos y ejemplos.
+3. `node bin/dsh-bridge.js doctor` → debe terminar en **`✔ todo en orden`** (en este equipo: 115 sesiones, 0 carpetas mal, 4 workspaces sin problemas).
+4. `node bin/dsh-bridge.js list` → tabla con tus conversaciones reales y sus imágenes; `--rapido` para la versión de 87 ms.
+5. El menú: `node bin/dsh-bridge.js`, opción `1`, mirar la tabla, `0` para salir.
+   **No uses la opción 2 con la app abierta**: te ofrecerá cerrarla y se cerraría también la conversación en curso.
+
+_(Sin más entradas todavía: la T12 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
