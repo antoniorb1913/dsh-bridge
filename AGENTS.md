@@ -59,7 +59,7 @@ dsh-bridge/
 │  ├─ registry.js             workspace.json: altas, invariantes, copia previa    [T7 ✔]
 │  ├─ compat.js               tipos de evento que entiende el harness destino     [T8 ✔]
 │  ├─ pack.js                 construir el bundle (ZIP + meta.json)               [T9 ✔]
-│  └─ import.js               instalar el bundle en el equipo destino             [pendiente]
+│  └─ import.js               instalar el bundle en el equipo destino             [T10 ✔]
 ├─ test/                      node:test con DSH_HOME falsos, sin datos reales
 ├─ docs/FORMATO.md            lo aprendido del formato v4 (para el futuro)
 ├─ AGENTS.md · TAREAS.md · HISTORIAL.md

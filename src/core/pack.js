@@ -19,6 +19,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { recogerAdjuntos } from "./attachments.js";
+import { nombreBase } from "./paths.js";
 import { analizarTipos, marcarIgnorables, tiposPendientes } from "./compat.js";
 import { findSession, readProjectionMeta } from "./sessions.js";
 import { createZip } from "./zip.js";
@@ -151,7 +152,7 @@ export function construirBundle(home, sessionId, opciones = {}) {
       agentPreset: header.agentPreset ?? null,
       titulo: titulo ?? null
     },
-    workspace: { ruta: header.cwd, titulo: path.basename(header.cwd ?? "") || null },
+    workspace: { ruta: header.cwd, titulo: header.cwd ? nombreBase(header.cwd) : null },
     log: {
       ruta: nombreLog,
       bytes: logFinal.length,
