@@ -157,12 +157,13 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 ## Fase 3 — Publicación
 
 ### T13 · README (ES + EN), `docs/FORMATO.md` y CHANGELOG
-**Estado:** ⏳ Pendiente · **Depende de:** T12 · **Rama propuesta:** `docs/t13-readme`
-**Sustituye el `README.md` provisional que creó GitHub**
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T12 · **Rama:** `docs/t13-readme` · **Commit:** `docs: README bilingüe, formato v4 y changelog`
+**Archivos:** `README.md`, `docs/FORMATO.md`, `CHANGELOG.md`
 
-- Qué es, para quién, instalación, cuatro comandos con ejemplos, límites y avisos
-- `docs/FORMATO.md`: frames, sobre de eventos, `ignorable`, registro, adjuntos — lo aprendido del formato v4
-- `CHANGELOG.md` con 0.1.0
+- [x] `README.md` nuevo (sustituye el provisional de GitHub): el problema en tres piezas, requisitos, instalación, menú, comandos con ejemplos, qué lleva el ZIP, avisos de seguridad (cerrar la app, ZIP sin cifrar), instalación manual, límites conocidos, desarrollo y **sección en inglés**
+- [x] `docs/FORMATO.md`: dónde vive todo, frames del log, sobre de eventos, `ignorable` y por qué un tipo desconocido rechaza el log entero, el registro `workspace` v2 con sus tres invariantes, la codificación de carpetas (comprobada contra 115 sesiones), adjuntos, caché de proyecciones y tabla de «qué puede romper la herramienta»
+- [x] `CHANGELOG.md` 0.1.0 en formato Keep a Changelog, con lo añadido, los seis fallos corregidos y lo pendiente
+- [x] Enlaces internos del README comprobados (los cinco apuntan a ficheros que existen)
 
 ### T14 · CI de GitHub Actions y metadatos del paquete
 **Estado:** ⏳ Pendiente · **Depende de:** T13 · **Rama propuesta:** `chore/t14-ci`
