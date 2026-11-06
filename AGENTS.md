@@ -214,6 +214,42 @@ Si algo está ⚠️, el agente dice **exactamente qué comando falta** y no da 
 
 **Cómo lo comprueba sin ejecutar git:** leyendo en **solo lectura** los metadatos de `.git/` — `HEAD`, `refs/`, `packed-refs`, `logs/HEAD` e `index`. Nunca escribe nada ahí. Si el usuario prefiere, puede pegar el resultado de `git status` y el agente lo usa como fuente.
 
+### REGLA 6 — Revisión cuando el usuario dice «ya está subido a GitHub»
+
+Cuando el usuario avise de que **ya lo ha subido**, el agente revisa si realmente está todo subido antes de dar nada por bueno, y responde siempre con tres cosas: **qué falta**, **por qué ha pasado** y **qué comandos ejecutar** para arreglarlo. Ninguna tarea se da por subida sin esta revisión.
+
+Comprobaciones, en este orden:
+
+1. **Rama correcta**: `HEAD` apunta a la rama de la tarea (`tipo/tn-...`), no a `main`.
+2. **Rama en `origin`**: existe `refs/remotes/origin/<rama>` (o aparece en `packed-refs`) y apunta **al mismo commit** que la rama local.
+3. **Commit con los archivos de la tarea**: el árbol del commit contiene todos los archivos del trabajo y no queda ninguno de la tarea sin rastrear en disco.
+4. **Tablero e historial dentro del commit**: `TAREAS.md` con la tarea en ✅ y `HISTORIAL.md` con su entrada, **en el commit**, no solo en el disco.
+5. **`.gitignore` no esconde nada necesario**: si un archivo del proyecto aparece ignorado (por ejemplo `src/` o un fixture `.zip` de test), avisar; `git add -f` solo si es intencionado.
+6. **PR y merge**: si el PR existe y si `main` en `origin` ya incluye la rama; y `main` local al día con `origin/main`.
+7. **Nada sensible subido**: ni conversaciones de `~/.dsh`, ni `*.zip` de sesiones, ni credenciales, ni `.env`, ni rutas privadas. Si aparece algo así es **⛔ bloqueante**: se dice lo primero y cómo quitarlo (`git rm --cached`); si ya está en el historial, avisar de que hay que reescribirlo o rotar lo expuesto.
+8. **Commits de más**: que el commit de la tarea no arrastre cambios de otras tareas (REGLA 1, paso 3).
+
+Se responde con esta tabla y, debajo, el detalle:
+
+| Comprobación | Estado | Por qué |
+|---|---|---|
+| Rama correcta | ✅ / ⚠️ | |
+| Rama subida a origin | ✅ / ⚠️ | |
+| Commit con los archivos de la tarea | ✅ / ⚠️ | |
+| Tablero e historial dentro del commit | ✅ / ⚠️ | |
+| Nada ignorado por error | ✅ / ⚠️ | |
+| PR mergeado en main | ✅ / ⚠️ | |
+| main local al día | ✅ / ⚠️ | |
+| Sin datos sensibles ni ficheros ajenos | ✅ / ⚠️ / ⛔ | |
+
+Reglas de la respuesta:
+
+- Un ⚠️ **no se tapa con un «está casi»**: se dice qué falta, por qué (falta `git add`, falta `git push`, rama equivocada, PR sin mergear, fichero ignorado…) y **el comando exacto**, en orden y listo para copiar.
+- Si algo no se puede comprobar leyendo `.git` (objeto empaquetado, rama sin `fetch`, autoría del PR), se pide **un comando concreto** al usuario (`git status`, `git log --oneline -3`, `git ls-remote origin`) y se espera su salida. No se supone.
+- Mientras haya un ⚠️, la tarea **no** se da por subida y no se empieza la siguiente.
+
+**Cómo se comprueba sin ejecutar git:** solo lectura de `.git/` — `HEAD`, `refs/heads/`, `refs/remotes/`, `packed-refs`, `logs/HEAD`, `index` y, si el objeto está suelto, `objects/<xx>/<resto>` (descomprimir con zlib para leer commit y árbol). Nunca se escribe ahí ni se ejecutan comandos de git (REGLA 4).
+
 ---
 
 ## 5. Convenciones

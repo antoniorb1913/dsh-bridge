@@ -183,3 +183,4 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 
 - La rama de trabajo actual es `main`; el usuario crea la rama de cada tarea (REGLA 4).
 - Los cuatro borradores (`zstd.js`, `zip.js`, `paths.js`, `sessions.js`) están escritos **sin tests**: por eso sus tareas siguen ⏳ y consisten en revisarlos, completarlos y cubrirlos.
+- **2026-11-06** — A petición del usuario se añadió la **REGLA 6** a `AGENTS.md` (revisión obligatoria cuando avisa de que ya está subido a GitHub). Viaja en el mismo commit de T1, que todavía no está subido.
