@@ -26,11 +26,13 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 ## Fase 1 — Núcleo: leer el almacén de DeepSeek Harness
 
 ### T2 · Log de sesión: frames Zstandard y cabecera
-**Estado:** ⏳ Pendiente · **Depende de:** T1 · **Rama propuesta:** `feat/t2-log-zstd`
-**Borrador ya escrito:** `src/core/zstd.js`
+**Estado:** ✅ Completada (2026-11-06) · **Depende de:** T1 · **Rama:** `feat/t2-log-zstd` · **Commit:** `feat: lee y escribe el log de sesión con cabecera y frames zstd`
+**Archivos:** `src/core/zstd.js`, `test/zstd.test.js`
 
-- Revisar `readFrames`/`decodeLogBuffer`/`encodeLogString` y la lectura rápida de cabecera
-- Tests: log de 1 y 2 frames, cola rota, cabecera inválida, ida y vuelta (decodificar → recomprimir → decodificar)
+- [x] Revisado: se separa la cabecera con su salto de línea (lo que escribe la app), se valida el JSON y se lee el primer frame en trozos crecientes
+- [x] **Fallo corregido:** al recomprimir se perdía el `\n` entre cabecera y primer evento, lo que habría dejado ilegibles todos los logs reescritos al importar
+- [x] Tests: 10 casos con `node --test` — 1 y 2 frames, varios frames, ida y vuelta con acentos/emoji, checksum, cola rota, firma inválida, cabecera inválida, cabecera en frame > 64 KB y log de 400 KB
+- [x] Comprobado con un log real (54.215.552 caracteres): recomprimir y volver a leer devuelve el texto idéntico
 
 ### T3 · ZIP propio (escribir sin comprimir, leer store y deflate)
 **Estado:** ⏳ Pendiente · **Depende de:** T1 · **Rama propuesta:** `feat/t3-zip`

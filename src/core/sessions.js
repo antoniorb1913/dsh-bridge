@@ -10,7 +10,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { projCachePath, sessionsRoot } from "./paths.js";
-import { decodeLogBuffer, splitHeader } from "./zstd.js";
+import { decodeLogBuffer, readLogHeader, splitHeader } from "./zstd.js";
 
 const LOG_NAME = /^session\.v(\d+)\.jsonl\.zstd$/;
 

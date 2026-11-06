@@ -66,4 +66,40 @@ Sin tablero y registro, un proyecto largo se convierte en una sucesión de cambi
 5. Abre `AGENTS.md` en la REGLA 6 y comprueba que explica las ocho comprobaciones y la tabla con la columna «Por qué».
 6. Esta entrada de `HISTORIAL.md` debe tener los cuatro apartados.
 
-_(Sin más entradas todavía: la T2 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
+---
+
+## 2026-11-06 · T2 — Log de sesión: frames Zstandard y cabecera
+
+**Estado:** ✅ Completada
+**Rama:** `feat/t2-log-zstd`
+**Commit:** `feat: lee y escribe el log de sesión con cabecera y frames zstd`
+**Archivos:** `src/core/zstd.js`, `test/zstd.test.js`, `src/core/sessions.js`, `package.json`, `AGENTS.md`, `TAREAS.md`
+
+### 1. ¿Qué he realizado?
+
+Revisé el módulo que lee y escribe el log de una sesión y le puse 10 tests. En la revisión salió un fallo importante: al recomprimir se **perdía el salto de línea entre la cabecera y el primer evento**, así que el log reescrito quedaba ilegible para la app. Además, la cabecera se lee ahora en trozos crecientes, se valida que sea JSON de sesión y se ha quitado código muerto.
+
+### 2. ¿Por qué?
+
+La importación **siempre** reescribe el log (hay que cambiar el `cwd`), así que ese fallo habría roto todas las migraciones de forma silenciosa: el fichero se escribiría correctamente pero la app no podría abrir la conversación, y el síntoma aparecería lejos de la causa. Los tests dejan fijado el contrato real del formato: la cabecera del primer frame **incluye** su `\n`, igual que en los logs que escribe la app.
+
+### 3. ¿Dónde verlo en el código?
+
+- `src/core/zstd.js:104-123` — `splitHeader`: devuelve la cabecera **con** su salto de línea y valida el JSON.
+- `src/core/zstd.js:125-138` — `encodeLogString`: comprime exactamente ese contenido en el primer frame.
+- `src/core/zstd.js:141-157` — `readLogHeader`: lee en trozos de 64 KB y va doblando hasta encontrar el final del primer frame.
+- `src/core/zstd.js:36-84` — `readFrames`: recorrido de frames y detección de cola rota.
+- `test/zstd.test.js:58-170` — los diez tests; el de la cabecera con su `\n` está en `:58` y el de ida y vuelta exacta en `:72`.
+- `src/core/sessions.js:13` — arreglo mínimo: el `import` de `readLogHeader` que faltaba.
+- `package.json:31` — script `test` corregido a `node --test`.
+- `AGENTS.md:54` — `zstd.js` deja de estar marcado como borrador.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. En `D:\Users\MSI-PC\Desktop\dsh\dsh-bridge`, ejecuta `npm test`: debe terminar con **`pass 10`** y **`fail 0`**.
+2. Mira el test «la cabecera va en el primer frame y los eventos en el segundo» (`test/zstd.test.js:58`): comprueba que el primer frame contiene la cabecera **con su salto de línea**.
+3. Mira el test «ida y vuelta exacta, con acentos y emoji» (`test/zstd.test.js:72`): compara el texto recuperado con el original carácter a carácter; si el `\n` se perdiera, se pondría en rojo.
+4. Prueba real (opcional): con el log de tu conversación de la web (54.215.552 caracteres), `decodificar → recomprimir → decodificar` devuelve **texto idéntico** y la cabecera se lee igual antes y después.
+5. Abre `TAREAS.md:28`: T2 en ✅ Completada y T3 en ⏳.
+
+_(Sin más entradas todavía: la T3 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_

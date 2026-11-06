@@ -51,7 +51,7 @@ storages/session_projcache/sessions/<session-id>.json   (solo lectura)
 dsh-bridge/
 ├─ bin/dsh-bridge.js          CLI: list, export, import, doctor
 ├─ src/core/
-│  ├─ zstd.js                 frames Zstandard, cabecera, comprimir/descomprimir  [borrador]
+│  ├─ zstd.js                 frames Zstandard, cabecera, comprimir/descomprimir  [T2 ✔]
 │  ├─ zip.js                  ZIP propio: escribir (store) y leer (store/deflate)  [borrador]
 │  ├─ paths.js                ~/.dsh, realpath, nombre de carpeta de workspace     [borrador]
 │  ├─ sessions.js             inventario: cabeceras, títulos, adjuntos citados     [borrador]
