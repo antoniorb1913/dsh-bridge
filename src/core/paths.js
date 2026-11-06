@@ -203,6 +203,21 @@ export function findAppAsar(explicit) {
   return candidates.find((candidate) => fs.existsSync(candidate));
 }
 
+/**
+ * Último tramo de una ruta, sea del sistema que sea.
+ *
+ * `path.basename` depende de la plataforma: en Linux `path.basename("D:\\web")`
+ * devuelve la cadena entera, porque la barra invertida no es separador. Aquí se
+ * manejan rutas escritas en otro equipo (un bundle de Windows abierto en Linux,
+ * o al revés), así que el nombre se saca a mano.
+ * @param {string} ruta
+ */
+export function nombreBase(ruta) {
+  const limpia = String(ruta ?? "").replace(/[\\/]+$/, "");
+  const partes = limpia.split(/[\\/]/);
+  return partes[partes.length - 1] || limpia;
+}
+
 /** Ruta del objeto de un adjunto a partir de su sha256. */
 export function attachmentPath(home, sha256) {
   return path.join(attachmentsRoot(home), "objects", sha256.slice(0, 2), sha256);

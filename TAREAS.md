@@ -115,14 +115,18 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] 10 tests nuevos (94 en total) y **exportación real: 17 entradas, 4,1 MB, 174 ms, 2.530 eventos, 14 adjuntos**
 
 ### T10 · Importar: colocar, reescribir ruta y registrar
-**Estado:** ⏳ Pendiente · **Depende de:** T7, T8, T9 · **Rama propuesta:** `feat/t10-importar`
-**`src/core/import.js`**
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T7, T8, T9 · **Rama:** `feat/t10-importar` · **Commit:** `feat: importa un bundle y registra la conversación en el workspace`
+**Archivos:** `src/core/import.js`, `test/import.test.js`
 
-- Validar el bundle (checksums, cabecera, versión de formato)
-- Reescribir `cwd` al workspace destino y colocar el log en la carpeta correcta
-- Adjuntos, registro del workspace y comprobación final
-- `--dry-run`, `--force`, aviso si la app está abierta
-- Tests: importación limpia, cambio de ruta, workspace ya existente, bundle dañado
+- [x] Validar el bundle: manifiesto, formato `dsh-bridge/1`, **sha256 del log**, cabecera y coherencia con el manifiesto
+- [x] Reescribir el `cwd` a la carpeta de este equipo y colocar el log en `sessions/<carpeta-derivada>/<id>/`
+- [x] Adjuntos con dedupe y hash verificado; si el bundle no trae alguno, avisa y sigue
+- [x] Registro del workspace reutilizando el que ya exista para esa ruta (no crea uno por conversación)
+- [x] No escribe nada si la app está abierta; `en seco` informa sin tocar disco; `forzar` reemplaza dejando copia
+- [x] 10 tests nuevos (105 en total) y **prueba de punta a punta con datos reales**: exportar la conversación «tarjeta» (4.182 KB, 14 adjuntos) e importarla en un almacén vacío → 2.530 eventos, 14 adjuntos, ruta reescrita, registro válido, y la segunda importación rechazada
+- [x] **Fallo corregido:** al importar se reconstruía el log desde el cuerpo **sin adaptar**, así que se perdían las marcas `ignorable` (el log se habría escrito y la app lo habría rechazado). Lo destapó el test de adaptación
+- [x] **Fallo de portabilidad corregido:** `path.basename` depende del sistema, así que una ruta de Windows leída en Linux daba el título del workspace como la ruta entera. Se sustituye por `nombreBase()` (en `paths.js`), que entiende los dos separadores; detectado al pasar la suite en WSL
+- [x] Suite verde **en Windows (Node 26) y en WSL/Linux (Node 24)**: 105 pruebas, 0 fallos en los dos
 
 ### T11 · CLI en español + menú interactivo
 **Estado:** ⏳ Pendiente · **Depende de:** T10 · **Rama propuesta:** `feat/t11-cli`

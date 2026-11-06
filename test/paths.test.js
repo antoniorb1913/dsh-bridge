@@ -13,6 +13,7 @@ import zlib from "node:zlib";
 
 import {
   HomeError,
+  nombreBase,
   attachmentPath,
   attachmentsRoot,
   canonicalize,
@@ -107,6 +108,17 @@ test("samePath compara como Windows: mayúsculas, separadores y barra final", ()
   assert.ok(samePath("D:\\Users\\MSI-PC\\Desktop\\web", "d:/users/msi-pc/desktop/web/"));
   assert.ok(samePath("D:\\web", "D:/web"));
   assert.ok(!samePath("D:\\web", "D:\\web2"));
+});
+
+test("nombreBase saca el último tramo en rutas de cualquier sistema", () => {
+  // Una ruta de Windows leída en Linux y una de Linux leída en Windows: el
+  // `path.basename` de la plataforma se equivoca en los dos casos.
+  assert.equal(nombreBase("D:\\Users\\MSI-PC\\Desktop\\web"), "web");
+  assert.equal(nombreBase("D:\\Users\\MSI-PC\\Desktop\\JARDIN\\bar\\"), "bar");
+  assert.equal(nombreBase("/home/msi-pc/proyecto"), "proyecto");
+  assert.equal(nombreBase("/mnt/d/Users/MSI-PC/Desktop/web/"), "web");
+  assert.equal(nombreBase("web"), "web");
+  assert.equal(nombreBase(""), "");
 });
 
 test("el nombre de carpeta reproduce los casos reales del equipo", () => {

@@ -395,4 +395,43 @@ Es la mitad del programa: sin bundle no hay nada que importar, y el ZIP debe pod
 3. Abre el ZIP con doble clic: dentro están `meta.json`, `LEEME.txt`, `session/…` y `attachments/objects/…`. El `LEEME.txt` explica qué es y cómo importarlo.
 4. Abre `TAREAS.md:105`: T9 en ✅ y T10 en ⏳.
 
-_(Sin más entradas todavía: la T10 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
+---
+
+## 2026-11-07 · T10 — Importar un bundle y registrar la conversación
+
+**Estado:** ✅ Completada
+**Rama:** `feat/t10-importar`
+**Commit:** `feat: importa un bundle y registra la conversación en el workspace`
+**Archivos:** `src/core/import.js`, `test/import.test.js`, `src/core/paths.js`, `src/core/registry.js`, `src/core/pack.js`, `test/paths.test.js`, `TAREAS.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+Módulo de importación: valida el bundle (manifiesto, formato, sha256 del log y coherencia de la cabecera), reescribe el `cwd` al workspace de este equipo, coloca el log en su carpeta, instala los adjuntos con dedupe y hash verificado, y registra el workspace reutilizando el que ya exista. Con guardas: nada se escribe con la app abierta, hay modo «en seco» y `forzar` deja copia. 10 tests.
+
+### 2. ¿Por qué?
+
+Es la mitad que faltaba: sin esto el ZIP es un fichero muerto. Además concentra los tres fallos que nos costaron tiempo en la migración manual: la ruta que hay que reescribir, el registro que hace que la app liste la conversación y la necesidad de cerrar la app para no perder ese registro.
+
+### 3. ¿Dónde verlo en el código?
+
+- `src/core/import.js:29-36` — `ImportError`.
+- `src/core/import.js:74-155` — `analizarBundle`: manifiesto, checksum, cabecera, adaptación de tipos y extracción de adjuntos.
+- `src/core/import.js:157-269` — `importarBundle`: carpeta destino, guardas, copia previa, log, adjuntos y registro.
+- `src/core/paths.js:206-216` — `nombreBase`, el arreglo de portabilidad.
+- `src/core/registry.js:181` y `src/core/pack.js:155` — usan `nombreBase` en vez de `path.basename`.
+- `test/import.test.js:64-260` — los 10 tests.
+- `test/paths.test.js:113-124` — rutas cruzadas Windows/Linux.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 105` / `fail 0`**.
+2. Lo mismo desde WSL, que es donde salió el fallo de portabilidad:
+
+   ```powershell
+   wsl.exe -e bash -lc "cd /mnt/d/Users/MSI-PC/Desktop/dsh/dsh-bridge && node --test 2>&1 | tail -6"
+   ```
+   Debe dar también `pass 105` / `fail 0`.
+3. Prueba de punta a punta (la ejecuté yo): exportar «Organizar proyecto tarjeta para Netlify» → 4.182 KB, 14 adjuntos; importar en un almacén vacío → 2.530 eventos, 14 adjuntos copiados, ruta reescrita, registro con 1 workspace y 0 problemas; segunda importación rechazada por «ya está instalada».
+4. Abre `TAREAS.md:117`: T10 en ✅ y T11 en ⏳.
+
+_(Sin más entradas todavía: la T11 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_

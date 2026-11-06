@@ -24,7 +24,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
-import { isAppRunning, registryPath, samePath } from "./paths.js";
+import { isAppRunning, nombreBase, registryPath, samePath } from "./paths.js";
 
 /** Error del registro: fichero incoherente, sesión ya asignada o app abierta. */
 export class RegistryError extends Error {
@@ -178,7 +178,7 @@ export function asegurarWorkspace(registro, datos) {
     workspaceId = crypto.randomUUID();
     tabla[workspaceId] = {
       path: ruta,
-      title: datos.title && String(datos.title).trim() !== "" ? String(datos.title).trim() : path.basename(ruta) || ruta,
+      title: datos.title && String(datos.title).trim() !== "" ? String(datos.title).trim() : nombreBase(ruta) || ruta,
       sessionIds: [sessionId],
       createdAt: ahora,
       updatedAt: ahora
