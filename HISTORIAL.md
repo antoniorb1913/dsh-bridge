@@ -314,4 +314,45 @@ Este fichero es exactamente lo que hizo falta el primer día para que la convers
 3. Mira el test «guardarRegistro se niega con DeepSeek Harness abierto» (`test/registry.test.js:201`): cubre el fallo que nos mordió.
 4. Abre `TAREAS.md:79`: T7 en ✅ y T8 en ⏳.
 
-_(Sin más entradas todavía: la T8 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
+---
+
+## 2026-11-07 · T8 — Compatibilidad de tipos de evento con el harness destino
+
+**Estado:** ✅ Completada
+**Rama:** `feat/t8-compat`
+**Commit:** `feat: compatibilidad de tipos de evento con el harness destino`
+**Archivos:** `src/core/compat.js`, `test/compat.test.js`, `TAREAS.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+Módulo que mira qué tipos de evento entiende el DeepSeek Harness **destino** (leyéndolos de su `app.asar`), compara con los que usa el log y marca `ignorable: true` solo en los que no conoce. Después comprueba que no queda ninguno pendiente antes de escribir. 10 tests.
+
+### 2. ¿Por qué?
+
+Un solo tipo de evento desconocido hace que la app **rechace el log entero** («unknown to this harness and not marked ignorable»): es lo que nos pasó con la conversación del bar. El formato prevé la salida —el sobre admite `ignorable`—, pero hay que saber exactamente qué sobra. Y la primera versión de la detección leía «alrededor» del símbolo en el asar y se colaba una mención de la documentación (`job/registered`): el modo automático habría decidido no parchear y la importación habría fallado igual. Por eso ahora se parsea el literal exacto de la tabla.
+
+### 3. ¿Dónde verlo en el código?
+
+- `src/core/compat.js:22-30` — `CompatError`.
+- `src/core/compat.js:34-110` — `TIPOS_CONOCIDOS_020_RC2`, la tabla de respaldo (foto de la 0.2.0-rc.2).
+- `src/core/compat.js:112-150` — `tiposDesdeAsar`: busca `KNOWN_SESSION_EVENT_TYPES = new Set([...])` y lee solo ese literal.
+- `src/core/compat.js:152-172` — `tiposConocidos`: precedencia manual → asar → respaldo, informando del origen.
+- `src/core/compat.js:174-204` — `analizarTipos`: tipos usados y desconocidos.
+- `src/core/compat.js:206-242` — `marcarIgnorables`: parcheo línea a línea con re-parseo de control.
+- `src/core/compat.js:244-250` — `tiposPendientes`: comprobación final.
+- `test/compat.test.js:35-170` — los 10 tests; el del ruido está en `:90`.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 84` / `fail 0`**.
+2. Los tipos reales de tu instalación:
+
+   ```powershell
+   cd "D:\Users\MSI-PC\Desktop\dsh\dsh-bridge"
+   node -e "Promise.all([import('./src/core/compat.js'),import('./src/core/paths.js')]).then(([c,p])=>{const t=c.tiposDesdeAsar(p.findAppAsar());console.log('tipos:',t.size,'| job/registered:',t.has('job/registered'))})"
+   ```
+   Debe dar `tipos: 62 | job/registered: true`.
+3. Que el ruido no entra: `test/compat.test.js:90` mete `job/registered` en un texto de documentación falso dentro del asar y comprueba que la lista leída no lo incluye.
+4. Abre `TAREAS.md:90`: T8 en ✅ y T9 en ⏳.
+
+_(Sin más entradas todavía: la T9 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
