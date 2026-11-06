@@ -142,11 +142,15 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] **Fallo corregido:** al cortar la salida (`| head`) el proceso terminaba con código 1 por `EPIPE`; ahora se cierra limpio
 
 ### T12 · Tests de integración con `DSH_HOME` falso
-**Estado:** ⏳ Pendiente · **Depende de:** T11 · **Rama propuesta:** `test/t12-integracion`
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T11 · **Rama:** `test/t12-integracion` · **Commit:** `test: ciclo completo exportar e importar sobre almacenes falsos`
+**Archivos:** `test/ayudas/entorno.js`, `test/integracion.test.js`, `src/core/import.js`
 
-- Fixtures generadas (nunca conversaciones reales): una sesión con texto, una con imagen, una con evento desconocido
-- Ciclo export → import en un almacén vacío y comprobación de que queda coherente
-- Casos de error: ZIP dañado, adjunto que falta, registro inconsistente
+- [x] `test/ayudas/entorno.js`: monta un almacén completo de mentira (tres conversaciones: texto, con fotos y con un **tipo de evento desconocido**, con caché de títulos y registro). Nunca datos reales
+- [x] Ciclo completo: exportar las tres e importarlas en otro almacén → 3 logs, ruta reescrita, adjuntos completos, **un solo workspace con 3 sesiones**, registro sin problemas y recuento de adjuntos idéntico
+- [x] Errores: **registro incoherente en el destino** (aborta sin escribir nada), ZIP truncado (no deja restos) y bundle sin fotos (avisa y el registro queda válido)
+- [x] **La CLI se prueba de verdad**: se lanzan `list --json`, `doctor`, `export`, `import --seco` como procesos aparte y se comprueba su salida y su código de salida
+- [x] **Mejora de robustez:** la importación ahora valida el registro del destino **antes** de escribir; si ya estaba roto, aborta en vez de dejar medio instalado algo que impide abrir la app
+- [x] 8 tests nuevos (125 en total), verdes **en Windows (Node 26) y en WSL/Linux (Node 24)**
 
 ---
 

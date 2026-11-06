@@ -472,4 +472,37 @@ Todo lo anterior estaba probado pero no se podía usar: hacía falta escribir ll
 5. El menú: `node bin/dsh-bridge.js`, opción `1`, mirar la tabla, `0` para salir.
    **No uses la opción 2 con la app abierta**: te ofrecerá cerrarla y se cerraría también la conversación en curso.
 
-_(Sin más entradas todavía: la T12 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
+---
+
+## 2026-11-07 · T12 — Integración: ciclo completo sobre almacenes falsos
+
+**Estado:** ✅ Completada
+**Rama:** `test/t12-integracion`
+**Commit:** `test: ciclo completo exportar e importar sobre almacenes falsos`
+**Archivos:** `test/ayudas/entorno.js`, `test/integracion.test.js`, `src/core/import.js`, `TAREAS.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+Añadí un almacén de mentira reutilizable (tres conversaciones: texto, con fotos y con un evento de tipo desconocido) y ocho tests de integración que hacen el ciclo entero: exportar las tres, importarlas en otro almacén y comprobar que queda todo coherente. Cuatro de esos tests lanzan la **CLI como proceso aparte** y miran su salida y su código de salida.
+
+### 2. ¿Por qué?
+
+Hasta ahora cada módulo se probaba por su lado y la coherencia se comprobaba a mano con conversaciones reales: bueno para validar una vez, malo para el futuro. Estos tests convierten esa comprobación manual en algo que se repite en cada cambio, y sin datos privados dentro del repo (REGLA 3). Además, el test del registro incoherente destapó un orden peligroso: se escribía el log antes de validar el registro del destino.
+
+### 3. ¿Dónde verlo en el código?
+
+- `test/ayudas/entorno.js:1-140` — generadores de eventos, `crearSesion`, `crearCasaFalsa` (almacén completo con títulos y registro).
+- `test/integracion.test.js:48-103` — ciclo completo y sus cinco comprobaciones.
+- `test/integracion.test.js:105-137` — registro incoherente en el destino.
+- `test/integracion.test.js:139-178` — bundle truncado y bundle sin fotos.
+- `test/integracion.test.js:180-232` — la CLI de verdad: `list --json`, `doctor`, `export`, `import --seco` y errores de uso.
+- `src/core/import.js:155-182` — `comprobarRegistroDestino`, la validación previa.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 125` / `fail 0`**.
+2. Solo los de integración: `node --test test/integracion.test.js` → 8 pruebas (tarda ~1 s porque arranca la CLI cuatro veces).
+3. En WSL: `wsl.exe -e bash -lc "cd /mnt/d/Users/MSI-PC/Desktop/dsh/dsh-bridge && node --test 2>&1 | tail -6"` → también 125 y 0 fallos.
+4. Abre `TAREAS.md:144`: T12 en ✅ y T13 en ⏳.
+
+_(Sin más entradas todavía: la T13 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
