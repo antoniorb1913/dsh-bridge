@@ -66,12 +66,15 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] 12 tests nuevos (50 en total) y **comprobación real: 115 sesiones en 41 ms (rápido) y 907 ms (completo), 111 con título**
 
 ### T6 · Adjuntos: referencias y copia con deduplicación
-**Estado:** ⏳ Pendiente · **Depende de:** T5 · **Rama propuesta:** `feat/t6-adjuntos`
+**Estado:** 👀 Esperando tu OK · **Depende de:** T5 · **Rama propuesta:** `feat/t6-adjuntos`
+**Archivos:** `src/core/attachments.js`, `test/attachments.test.js`
 
-- Resolver `attachments/v1/objects/<2 hex>/<sha256>`
-- Copiar solo lo citado, sin repetir lo que ya existe
-- Detectar adjuntos que faltan y avisar (no abortar)
-- Tests: copia, dedupe, hueco en el almacén
+- [x] Resolver `attachments/v1/objects/<2 hex>/<sha256>` con el hash validado (nada de rutas raras)
+- [x] `recogerAdjuntos` (exportar) e `instalarAdjuntos` (importar) copiando solo lo citado
+- [x] Dedupe por existencia: lo que ya está no se reescribe; escritura atómica sin dejar temporales
+- [x] **El contenido se verifica contra su hash** antes de escribir: un bundle manipulado no entra
+- [x] Los que faltan se devuelven aparte, sin abortar
+- [x] 9 tests nuevos (59 en total) y **comprobación real: 5 sesiones con adjuntos, 587 referencias, 0 ausentes**
 
 ### T7 · Registro de workspaces (`storages/workspace.json`)
 **Estado:** ⏳ Pendiente · **Depende de:** T4 · **Rama propuesta:** `feat/t7-registro`
