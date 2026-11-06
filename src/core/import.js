@@ -21,7 +21,7 @@ import path from "node:path";
 import { instalarAdjuntos } from "./attachments.js";
 import { analizarTipos, marcarIgnorables, tiposPendientes } from "./compat.js";
 import { canonicalize, encodeSessionDirName, isAppRunning, nombreBase, sessionsRoot } from "./paths.js";
-import { registrarSesion } from "./registry.js";
+import { leerRegistro, registrarSesion, validarRegistro } from "./registry.js";
 import { readZip } from "./zip.js";
 import { decodeLogBuffer, encodeLogString, splitHeader } from "./zstd.js";
 
@@ -146,6 +146,32 @@ export function analizarBundle(archivoZip, opciones = {}) {
 }
 
 /**
+ * Comprueba que el registro del destino esté sano **antes** de escribir nada.
+ *
+ * Si el registro ya viene roto, la app no arrancaría: mejor decirlo ahora que
+ * dejar un log a medias y un fichero que impide abrir DeepSeek Harness.
+ * @param {string} home
+ */
+function comprobarRegistroDestino(home) {
+  let leido;
+  try {
+    leido = leerRegistro(home);
+  } catch (error) {
+    throw new ImportError(
+      `el registro de workspaces de este equipo no se puede leer: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error }
+    );
+  }
+  const problemas = validarRegistro(leido.registro);
+  if (problemas.length > 0) {
+    throw new ImportError(
+      "el registro de workspaces de este equipo es incoherente y DeepSeek Harness no arrancaría; " +
+        `arréglalo antes de importar:\n - ${problemas.join("\n - ")}`
+    );
+  }
+}
+
+/**
  * Importa el bundle.
  *
  * @param {string} archivoZip
@@ -157,6 +183,9 @@ export function analizarBundle(archivoZip, opciones = {}) {
 export function importarBundle(archivoZip, opciones) {
   const home = opciones.home;
   if (typeof home !== "string" || home === "") throw new ImportError("falta la carpeta de datos de DeepSeek Harness (home)");
+
+  // El destino tiene que estar sano antes de tocar nada.
+  comprobarRegistroDestino(home);
 
   const analizado = analizarBundle(archivoZip, opciones);
   const { meta, header, objetos, eventos, avisos, compatibilidad } = analizado;

@@ -64,6 +64,8 @@ dsh-bridge/
 │  ├─ pack.js                 construir el bundle (ZIP + meta.json)               [T9 ✔]
 │  └─ import.js               instalar el bundle en el equipo destino             [T10 ✔]
 ├─ test/                      node:test con DSH_HOME falsos, sin datos reales
+│  ├─ ayudas/entorno.js       monta un almacén de mentira completo (3 conversaciones)  [T12 ✔]
+│  └─ integracion.test.js     ciclo export→import y la CLI lanzada de verdad           [T12 ✔]
 ├─ docs/FORMATO.md            lo aprendido del formato v4 (para el futuro)
 ├─ AGENTS.md · TAREAS.md · HISTORIAL.md
 ├─ README.md (ES + EN) · CHANGELOG.md · LICENSE (MIT)
