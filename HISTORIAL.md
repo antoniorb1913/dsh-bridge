@@ -273,4 +273,45 @@ Una conversación son 13.000 eventos y 287 imágenes, pero el almacén tiene adj
 3. El test «un adjunto que no cuadra con su hash no entra» (`test/attachments.test.js:88`) demuestra el rechazo del bundle manipulado.
 4. Abre `TAREAS.md:68`: T6 en ✅ y T7 en ⏳.
 
-_(Sin más entradas todavía: la T7 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
+---
+
+## 2026-11-07 · T7 — Registro de workspaces con invariantes y copia previa
+
+**Estado:** ✅ Completada
+**Rama:** `feat/t7-registro`
+**Commit:** `feat: registro de workspaces con invariantes y copia previa`
+**Archivos:** `src/core/registry.js`, `test/registry.test.js`, `TAREAS.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+Módulo nuevo del registro de workspaces (`storages/workspace.json`, dominio `workspace` versión 2): lee el fichero respetando lo que no conoce (`defaultWorkspaceId`, marcas), valida las tres invariantes, da de alta el workspace y asigna la sesión de forma idempotente, desarchiva la sesión al instalarla, y guarda con copia previa y escritura atómica. 15 tests.
+
+### 2. ¿Por qué?
+
+Este fichero es exactamente lo que hizo falta el primer día para que la conversación apareciera, y la app **lo valida al arrancar y aborta** si está incoherente. Por eso aquí se comprueba antes de escribir y se guarda copia: es el único fichero del almacén cuyo estropicio deja DeepSeek Harness sin abrir. Además se niega a escribir con la app abierta, que es cómo perdimos el primer registro: lo tenía en memoria y lo sobrescribió al cerrarse.
+
+### 3. ¿Dónde verlo en el código?
+
+- `src/core/registry.js:30-38` — `RegistryError`.
+- `src/core/registry.js:40-57` — `registroVacio` con la forma exacta de la app.
+- `src/core/registry.js:59-90` — `leerRegistro`: conserva campos desconocidos y rellena los que falten.
+- `src/core/registry.js:92-136` — `validarRegistro`: las tres invariantes (orden, ruta única, sesión contada una vez).
+- `src/core/registry.js:156-229` — `asegurarWorkspace`: alta idempotente, desarchivado y limpieza de `pendingMutation`.
+- `src/core/registry.js:231-273` — `guardarRegistro`: copia `.bak-<fecha>`, escritura atómica y negativa con la app abierta.
+- `src/core/registry.js:275-289` — `registrarSesion`: las tres cosas de un tirón, con modo seco.
+- `test/registry.test.js:37-247` — los 15 tests.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 74` / `fail 0`**.
+2. Lectura real del registro, en seco (no escribe):
+
+   ```powershell
+   cd "D:\Users\MSI-PC\Desktop\dsh\dsh-bridge"
+   node -e "Promise.all([import('./src/core/registry.js'),import('./src/core/paths.js')]).then(([r,p])=>{const h=p.resolveHome();const {registro}=r.leerRegistro(h);console.log('problemas:',r.validarRegistro(registro).length,'| workspaces:',registro.global.workspaceIds.length,'| sesiones:',Object.values(registro.tables.workspaces).reduce((a,f)=>a+f.sessionIds.length,0));const seco=r.registrarSesion(h,{path:'D:\\Users\\MSI-PC\\Desktop\\web',sessionId:'session-7f56faee-07dc-4147-a205-9add8b35ff3d'},{seco:true});console.log('cambios:',JSON.stringify(seco.cambios))})"
+   ```
+   Resultado en este equipo: `problemas: 0 | workspaces: 4 | sesiones: 8` y `cambios: []`.
+3. Mira el test «guardarRegistro se niega con DeepSeek Harness abierto» (`test/registry.test.js:201`): cubre el fallo que nos mordió.
+4. Abre `TAREAS.md:79`: T7 en ✅ y T8 en ⏳.
+
+_(Sin más entradas todavía: la T8 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
