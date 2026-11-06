@@ -1,7 +1,7 @@
 {
   "name": "dsh-bridge",
   "version": "0.1.0",
-  "description": "Exporta e importa conversaciones de DeepSeek Harness entre equipos (ZIP portable) sin tocar la app a mano.",
+  "description": "Exporta e importa conversaciones de DeepSeek Harness entre equipos: ZIP portable, menú y las tres piezas que la app no hace sola (registro, ruta y compatibilidad de eventos).",
   "keywords": [
     "deepseek-harness",
     "dsh",
@@ -9,12 +9,13 @@
     "migration",
     "export",
     "import",
-    "zstd"
+    "zstd",
+    "cli"
   ],
   "license": "MIT",
   "type": "module",
   "bin": {
-    "dsh-bridge": "./bin/dsh-bridge.js"
+    "dsh-bridge": "bin/dsh-bridge.js"
   },
   "files": [
     "bin",
@@ -25,14 +26,20 @@
     "LICENSE"
   ],
   "engines": {
-    "node": ">=22.15"
+    "node": ">=22.15.0"
   },
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "start": "node bin/dsh-bridge.js",
+    "doctor": "node bin/dsh-bridge.js doctor"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/antoniorb1913/dsh-bridge.git"
   },
-  "author": "antoniorb1913"
+  "homepage": "https://github.com/antoniorb1913/dsh-bridge#readme",
+  "bugs": {
+    "url": "https://github.com/antoniorb1913/dsh-bridge/issues"
+  },
+  "author": "Antonio Rodríguez (antoniorb1913)"
 }
