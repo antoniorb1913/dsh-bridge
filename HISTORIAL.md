@@ -774,7 +774,7 @@ Copiar la IP es el paso que más se falla: se cambia con el DHCP, se confunde co
 
 ## 2026-11-07 · T20 — Cierre de la v0.2
 
-**Estado:** 👀 Esperando tu OK
+**Estado:** ✅ Completada
 **Rama:** `test/t20-cierre-v02` (o la de T19, en el mismo PR)
 **Commit:** `feat: descubrimiento en la red y cierre de la v0.2 (0.2.0)` (el mismo que T19)
 **Archivos:** `README.md`, `CHANGELOG.md`, `package.json`, `bin/dsh-bridge.js`, `src/core/pack.js`, `TAREAS.md`, `HISTORIAL.md`
@@ -804,4 +804,40 @@ Una versión que se puede usar pero que se documenta como si no existiera es una
 5. `node bin/dsh-bridge.js` (sin argumentos, en una terminal de verdad) → el menú ya no dice «(v0.2)»; la opción 3 abre la interfaz y la 4 pide carpeta y arranca la recepción.
 6. Abre `TAREAS.md:248`: T20 en 👀 (pasará a ✅ con tu «sí»).
 
-_(Sin más entradas todavía: la T20 se cerrará cuando respondas «sí».)_
+---
+
+## 2026-11-07 · T21 — Selector nativo de ficheros y carpetas
+
+**Estado:** ✅ Completada
+**Rama:** `feat/t21-selector`
+**Commit:** `feat: diálogos del sistema para elegir ficheros y carpetas`
+**Archivos:** `src/cli/dialogos.js`, `bin/dsh-bridge.js`, `src/cli/opciones.js`, `src/cli/formato.js`, `test/dialogos.test.js`, `TAREAS.md`, `HISTORIAL.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+Exportar sin `-o` pregunta con el explorador en qué carpeta guardar; importar sin ruta abre el diálogo de fichero, y sin `--workspace` pregunta la carpeta del proyecto. En el menú, dejar la respuesta vacía abre el diálogo. Se puede desactivar con `--sin-dialogos` y, sin entorno gráfico o sin terminal interactiva, se vuelve al teclado.
+
+### 2. ¿Por qué?
+
+Era la petición literal del usuario: «¿al exportar o importar se abrirá el explorador de archivos para que lo elijas tú?». Teclear rutas es donde más se falla, y en Windows el explorador ya está ahí. Se hace sin dependencias (PowerShell, `osascript` o `zenity`) para no romper la promesa de `npm install` vacío.
+
+### 3. ¿Dónde verlo en el código?
+
+- `src/cli/dialogos.js:32-49` — `hayDialogos`: ¿hay ventanas en este sistema?
+- `src/cli/dialogos.js:52-140` — `comandoDialogo`: el comando nativo de cada sistema, con el escapado de comillas.
+- `src/cli/dialogos.js:149-180` — `elegirArchivo`, `elegirCarpeta`, `guardarComo` y `nombreSugerido`.
+- `bin/dsh-bridge.js:99-160` — `export` e `import` con diálogos y vuelta al teclado.
+- `bin/dsh-bridge.js:502-560` — los mismos diálogos desde el menú.
+- `test/dialogos.test.js` — 7 tests sin abrir ventanas.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 174` / `fail 0`**.
+2. `node bin/dsh-bridge.js export <id>` en una consola de verdad → se abre la ventana «¿En qué carpeta guardo el ZIP?». Comprobado por el usuario: elige carpeta y el ZIP se guarda ahí.
+3. `node bin/dsh-bridge.js import` → diálogo de fichero; cancelar no rompe nada.
+4. `node bin/dsh-bridge.js export <id> --sin-dialogos -o <carpeta>` → sin ventanas, directo.
+5. `npm pack --dry-run` → **23 ficheros, 63,1 kB**.
+
+**Con esto el encargo queda terminado: 21 de 21 tareas.**
+
+_(Fin del historial.)_

@@ -43,6 +43,7 @@ const INTERRUPTORES = new Set([
   "--red",
   "--abrir",
   "--buscar",
+  "--sin-dialogos",
   "--help",
   "-h",
   "--version",

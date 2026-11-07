@@ -26,6 +26,7 @@ import {
 import { leerRegistro, validarRegistro } from "../src/core/registry.js";
 import { attachmentHashes, listSessions } from "../src/core/sessions.js";
 import { decodeLogBuffer } from "../src/core/zstd.js";
+import { elegirArchivo, elegirCarpeta } from "../src/cli/dialogos.js";
 import { crearServidor, ipLocal } from "../src/net/servidor.js";
 import { enviarSesiones } from "../src/net/cliente.js";
 import { crearUiServidor } from "../src/net/ui.js";
@@ -95,13 +96,20 @@ function comandoList(opciones) {
   return 0;
 }
 
-function comandoExport(posicionales, opciones) {
+async function comandoExport(posicionales, opciones) {
   const home = resolveHome(opciones["dsh-home"]);
   const id = posicionales[0];
   if (id === undefined) throw new CliError("indica qué conversación exportar (mira `dsh-bridge list`) o usa el menú");
 
   const { tipos, origen } = leerTipos(opciones);
-  const destino = limpiarRuta(opciones.salida ?? opciones.o ?? carpetaEscritorio());
+
+  // Sin `-o`: si hay ventanas, se pregunta con el explorador; si no, al Escritorio.
+  let destino = limpiarRuta(opciones.salida ?? opciones.o);
+  if (destino === "") {
+    const elegida = process.stdin.isTTY ? await elegirCarpeta({ titulo: "¿En qué carpeta guardo el ZIP?" }) : undefined;
+    destino = elegida ?? carpetaEscritorio();
+  }
+
   const resultado = exportarSesion(home, id, destino, { tiposConocidos: tipos, origenCompat: origen });
 
   ok(`exportada «${resultado.meta.sesion.titulo ?? resultado.meta.sesion.id}»`);
@@ -116,10 +124,21 @@ function comandoExport(posicionales, opciones) {
   return 0;
 }
 
-function comandoImport(posicionales, opciones) {
+async function comandoImport(posicionales, opciones) {
   const home = resolveHome(opciones["dsh-home"]);
-  const archivo = limpiarRuta(posicionales[0]);
-  if (archivo === undefined || archivo === "") throw new CliError("indica el fichero .zip a importar");
+
+  let archivo = limpiarRuta(posicionales[0]);
+  if (archivo === "") {
+    const elegido = process.stdin.isTTY ? await elegirArchivo({ titulo: "Elige el ZIP de la conversación" }) : undefined;
+    archivo = elegido === undefined ? "" : limpiarRuta(elegido);
+  }
+  if (archivo === "") throw new CliError("indica el fichero .zip a importar");
+
+  let workspace = opciones.workspace === undefined ? undefined : limpiarRuta(opciones.workspace);
+  if (workspace === undefined && process.stdin.isTTY) {
+    const carpeta = await elegirCarpeta({ titulo: "¿En qué carpeta del proyecto vivo la conversación?" });
+    if (carpeta !== undefined) workspace = limpiarRuta(carpeta);
+  }
 
   const { tipos } = leerTipos(opciones);
   const plan = analizarBundle(archivo, { tiposConocidos: tipos });
@@ -134,7 +153,7 @@ function comandoImport(posicionales, opciones) {
 
   const resultado = importarBundle(archivo, {
     home,
-    workspace: opciones.workspace === undefined ? undefined : limpiarRuta(opciones.workspace),
+    workspace,
     title: opciones.titulo,
     forzar: opciones.forzar === true,
     seco: opciones.seco === true,
@@ -505,7 +524,9 @@ async function menuExportar(rl, home, tipos, origen) {
   }
   if (indices.length === 0) return;
 
-  const destino = limpiarRuta(await rl.question(`¿Dónde guardo los ZIP? [${carpetaEscritorio()}]: `)) || carpetaEscritorio();
+  const escrito = limpiarRuta(await rl.question(`¿Dónde guardo los ZIP? [${carpetaEscritorio()}, Enter = elegir carpeta]: `));
+  const elegida = escrito === "" ? await elegirCarpeta({ titulo: "¿En qué carpeta guardo los ZIP?" }) : undefined;
+  const destino = escrito !== "" ? escrito : elegida !== undefined ? limpiarRuta(elegida) : carpetaEscritorio();
   for (const indice of indices) {
     const sesion = sesiones[indice];
     try {
@@ -521,7 +542,9 @@ async function menuExportar(rl, home, tipos, origen) {
 }
 
 async function menuImportar(rl, home, tipos) {
-  const archivo = limpiarRuta(await rl.question("Ruta del ZIP (arrástralo aquí): "));
+  const escrito = limpiarRuta(await rl.question("Ruta del ZIP (arrástralo aquí, Enter = elegirlo en una ventana): "));
+  const elegido = escrito === "" ? await elegirArchivo({ titulo: "Elige el ZIP de la conversación" }) : undefined;
+  const archivo = escrito !== "" ? escrito : elegido !== undefined ? limpiarRuta(elegido) : "";
   if (archivo === "") return;
   if (!fs.existsSync(archivo)) {
     mal(`no existe: ${archivo}`);
@@ -654,6 +677,8 @@ async function menu(home, opciones) {
 
 async function principal(argv) {
   const { comando, posicionales, opciones } = parsearArgumentos(argv);
+  // `--sin-dialogos` deja el programa preguntando por teclado, como antes de T21.
+  if (opciones["sin-dialogos"] === true) process.env.DSH_BRIDGE_SIN_DIALOGOS = "1";
 
   // La ayuda y la versión no dependen de tener DeepSeek Harness instalado: se
   // atienden antes de buscar `~/.dsh`. Si no, `dsh-bridge --version` fallaría en

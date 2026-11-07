@@ -246,7 +246,7 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] **Corregido al probarlo en un solo PC:** `send --buscar` descartaba «este equipo» y se quedaba sin candidatos; ahora, si es el único, lo usa avisando. Probado también dentro de WSL/Ubuntu (donde `serve` se anuncia como `DESKTOP-S22K5U6`)
 
 ### T20 · Tests de red, documentación y cierre de v0.2
-**Estado:** 👀 Esperando tu OK · **Depende de:** T19 · **Rama propuesta:** `feat/t19-descubrir` (el mismo commit que T19)
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T19 · **Rama:** `feat/t19-descubrir` (mismo commit que T19) · **Commit:** `feat: descubrimiento en la red y cierre de la v0.2 (0.2.0)`
 **Archivos:** `README.md`, `CHANGELOG.md`, `package.json`, `bin/dsh-bridge.js`, `src/core/pack.js`, `TAREAS.md`, `HISTORIAL.md`
 
 - [x] Tests de red ya cubiertos en T16–T19: **167 pruebas, 0 fallos** (servidor, cifrado, cliente, interfaz y descubrimiento)
@@ -257,15 +257,17 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] `npm pack --dry-run` → **22 ficheros, 60,8 kB** (entran los cinco módulos nuevos)
 
 ### T21 · Selector nativo de ficheros y carpetas
-**Estado:** ⏳ Pendiente · **Depende de:** T18 · **Rama propuesta:** `feat/t21-selector`
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T18 · **Rama:** `feat/t21-selector` · **Commit:** `feat: diálogos del sistema para elegir ficheros y carpetas`
+**Archivos:** `src/cli/dialogos.js`, `bin/dsh-bridge.js`, `src/cli/opciones.js`, `src/cli/formato.js`, `test/dialogos.test.js`
 **Petición del usuario (2026-11-07): «¿al exportar o importar se abrirá el explorador de archivos para elegirlo tú?»**
 
-- Al exportar: diálogo **Guardar como** para el ZIP (nombre propuesto ya relleno)
-- Al importar: diálogo **Abrir** para elegir el `.zip`, y **carpeta** para el workspace destino
-- Sin dependencias: PowerShell (`System.Windows.Forms`) en Windows, `osascript` en macOS, `zenity`/`kdialog` en Linux
-- Degradación limpia: si no hay entorno gráfico, vuelve a pedir la ruta por teclado (lo que hay hoy)
-- En la interfaz web (T18) el navegador ya trae su propio selector: esto es para el menú de terminal
-- Tests: la parte de decisión («hay diálogo / no hay») con dobles; el diálogo real se prueba a mano
+- [x] **Exportar sin `-o`** pregunta con el explorador en qué carpeta guardar (si hay ventanas); con `-o` sigue siendo directo
+- [x] **Importar sin ruta** abre el diálogo de fichero; sin `--workspace` pregunta la carpeta del proyecto en una ventana
+- [x] En el **menú**, dejar la respuesta vacía abre el diálogo (exportar: carpeta; importar: fichero)
+- [x] Sin dependencias: PowerShell + `System.Windows.Forms` en Windows, `osascript` en macOS, `zenity` en Linux; **degradación limpia** a teclado si no hay entorno gráfico, si no es una terminal interactiva o si se pasa `--sin-dialogos`
+- [x] Nombres propuestos seguros (`nombreSugerido`): sin acentos ni caracteres prohibidos, con la fecha
+- [x] 7 tests nuevos (174 en total) de la parte que se puede probar sin abrir ventanas: comando de cada sistema, comillas de PowerShell, `--sin-dialogos` y nombres
+- [x] **Comprobado por el usuario:** el diálogo se abre de verdad, elige carpeta y el ZIP se guarda donde toca
 
 ---
 
