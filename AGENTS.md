@@ -49,7 +49,11 @@ storages/session_projcache/sessions/<session-id>.json   (solo lectura)
 
 ```
 dsh-bridge/
+├─ recibir.cmd                doble clic: recepción (CRLF y sin acentos)          [T22 ✔]
+├─ enviar.cmd                 doble clic: interfaz web                            [T22 ✔]
+├─ dsh-bridge.cmd             doble clic: menú y comandos                          [T22 ✔]
 ├─ bin/dsh-bridge.js          CLI y menú: orquesta, la lógica está en src/core    [T11 ✔]
+├─ bin/lanzador.js            lo que hay detrás de los .cmd (habla con el usuario) [T22 ✔]
 ├─ src/cli/
 │  ├─ opciones.js             argumentos, alias en castellano y errores de uso    [T11 ✔]
 │  ├─ dialogos.js             ventanas del sistema para elegir ficheros/carpetas  [T21 ✔]

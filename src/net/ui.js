@@ -62,7 +62,7 @@ const PAGINA = `<!doctype html>
         <option value="">— elige un equipo —</option>
       </select>
     </div>
-    <p class="pista">Los enseña el otro equipo al ejecutar <code>dsh-bridge serve --red --workspace &lt;carpeta&gt;</code>.</p>
+    <p class="pista" id="aviso-red">Los enseña el otro equipo al ejecutar <code>dsh-bridge serve --red --workspace &lt;carpeta&gt;</code>.</p>
   </section>
 
   <section class="panel">
@@ -375,8 +375,11 @@ const GUION = `(() => {
 
   async function buscar() {
     const botonBuscar = $("buscar");
+    const aviso = $("aviso-red");
     botonBuscar.disabled = true;
     botonBuscar.textContent = "buscando…";
+    aviso.className = "pista";
+    aviso.textContent = "preguntando en la red durante 2 s…";
     try {
       const respuesta = await fetch("/api/descubrir", { method: "POST", headers: cabeceras });
       const datos = await respuesta.json();
@@ -394,10 +397,16 @@ const GUION = `(() => {
       }
       lista.hidden = datos.equipos.length === 0;
       if (datos.equipos.length === 0) {
-        estado.textContent = "No he encontrado ningún equipo. Comprueba que el otro tenga abierto «serve --red».";
+        aviso.className = "pista mal";
+        aviso.textContent =
+          "No he encontrado ningún equipo. Arranca el otro con «dsh-bridge serve --red --workspace <carpeta>» y que los dos estén en la misma red.";
+      } else {
+        aviso.className = "pista ok";
+        aviso.textContent = datos.equipos.length === 1 ? "1 equipo encontrado: elígelo en la lista." : datos.equipos.length + " equipos encontrados: elige uno en la lista.";
       }
     } catch (error) {
-      estado.textContent = "Fallo al buscar: " + error.message;
+      aviso.className = "pista mal";
+      aviso.textContent = "Fallo al buscar: " + error.message;
     } finally {
       botonBuscar.disabled = false;
       botonBuscar.textContent = "Buscar en la red";

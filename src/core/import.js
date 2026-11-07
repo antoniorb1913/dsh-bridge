@@ -267,6 +267,7 @@ export function importarBundle(archivoZip, opciones) {
   return {
     seco: false,
     sesionId: sessionId,
+    titulo,
     eventos,
     workspace: rutaCanonica,
     rutaLog: rutaLogDestino,

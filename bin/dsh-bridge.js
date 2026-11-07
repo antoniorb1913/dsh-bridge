@@ -247,6 +247,23 @@ function comandoDoctor(opciones) {
 }
 
 /**
+ * ¿Hay ya un `dsh-bridge serve` contestando en ese puerto de este equipo?
+ */
+async function hayReceptorPropio(puerto) {
+  const control = new AbortController();
+  const reloj = setTimeout(() => control.abort(), 800);
+  try {
+    const respuesta = await fetch(`http://127.0.0.1:${puerto}/estado`, { signal: control.signal });
+    const datos = await respuesta.json();
+    return datos !== null && typeof datos === "object" && datos.app === "dsh-bridge";
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(reloj);
+  }
+}
+
+/**
  * Se queda escuchando para que otro equipo se empareje y envíe una conversación.
  * El código se enseña una vez, caduca y solo sirve una vez.
  */
@@ -273,17 +290,63 @@ async function comandoServe(opciones) {
     maxBytes = Math.round(maxMB * 1024 * 1024);
   }
 
-  const servidor = crearServidor({
-    home,
-    puerto,
+  // Ya hay un `serve` nuestro en el puerto por defecto: en vez de abrir otro
+  // (que se pisarían en el anuncio), se avisa y se sale.
+  if (opciones.puerto === undefined && (await hayReceptorPropio(puerto))) {
+    aviso(`ya hay un dsh-bridge recibiendo en http://127.0.0.1:${puerto}`);
+    escribir("mira esa ventana: el código está ahí. Si de verdad quieres abrir otro, usa --puerto 8788");
+    return 0;
+  }
+
+  const opcionesServidor = {    home,
     host,
     codigo: opciones.codigo,
     workspace,
     forzar: opciones.forzar === true,
     tiposConocidos: tipos,
-    maxBytes
-  });
-  const puertoReal = await servidor.iniciar();
+    maxBytes,
+    alRecibir: (resultado) => {
+      escribir("");
+      ok(`recibida «${resultado.titulo ?? resultado.sesionId}»`);
+      escribir(`  eventos   : ${resultado.eventos}`);
+      escribir(`  adjuntos  : ${resultado.adjuntos.copiados} copiados, ${resultado.adjuntos.yaExistian} ya estaban`);
+      escribir(`  queda en  : ${resultado.workspace}`);
+      escribir("  (la carpeta del proyecto no cambia: la conversación vive dentro de DeepSeek Harness)");
+      for (const nota of resultado.avisos ?? []) aviso(nota);
+      escribir("  Ctrl+C para parar.");
+      escribir("");
+    }
+  };
+
+  // Si el puerto está ocupado por otro `serve`, se prueba el siguiente. Solo
+  // con los puertos por defecto: si el usuario pidió uno, se respeta y se avisa.
+  let servidor;
+  let puertoReal;
+  if (opciones.puerto === undefined) {
+    let ultimoError;
+    for (let intento = puerto; intento < puerto + 10; intento += 1) {
+      const candidato = crearServidor({ ...opcionesServidor, puerto: intento });
+      try {
+        puertoReal = await candidato.iniciar();
+        servidor = candidato;
+        if (intento !== puerto) aviso(`el puerto ${puerto} estaba ocupado (¿otro «serve» abierto?): uso el ${intento}`);
+        break;
+      } catch (error) {
+        ultimoError = error;
+        if (!/EADDRINUSE|EACCES/.test(error.message)) throw error;
+      }
+    }
+    if (servidor === undefined) {
+      throw new CliError(
+        `no he encontrado ningún puerto libre entre el ${puerto} y el ${puerto + 9}: cierra el otro «dsh-bridge serve» o indica --puerto. ` +
+          `(${ultimoError instanceof Error ? ultimoError.message : "sin detalle"})`
+      );
+    }
+  } else {
+    servidor = crearServidor({ ...opcionesServidor, puerto });
+    puertoReal = await servidor.iniciar();
+  }
+
   const datos = servidor.datos;
   const ip = host === "0.0.0.0" ? ipLocal() ?? "127.0.0.1" : "127.0.0.1";
 

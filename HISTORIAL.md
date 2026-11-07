@@ -840,4 +840,47 @@ Era la petición literal del usuario: «¿al exportar o importar se abrirá el e
 
 **Con esto el encargo queda terminado: 21 de 21 tareas.**
 
+---
+
+## 2026-11-07 · T22 — Lanzadores de doble clic
+
+**Estado:** ✅ Completada
+**Rama:** `feat/t22-lanzadores`
+**Commit:** `feat: lanzadores de doble clic y aviso al recibir`
+**Archivos:** `recibir.cmd`, `enviar.cmd`, `dsh-bridge.cmd`, `bin/lanzador.js`, `bin/dsh-bridge.js`, `src/net/servidor.js`, `src/core/import.js`, `test/lanzadores.test.js`, `README.md`, `TAREAS.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+Tres lanzadores para abrir con doble clic: **`recibir.cmd`** (pregunta la carpeta, la crea y se queda escuchando), **`enviar.cmd`** (arranca la interfaz y abre el navegador) y **`dsh-bridge.cmd`** (el menú). Además, el receptor ya **avisa por consola** cuando llega una conversación, y `serve` resuelve solo los choques de puerto.
+
+### 2. ¿Por qué?
+
+El usuario lo pidió así: «sin tener que lanzar comando». Y abrir dos veces el receptor reventaba con un `EADDRINUSE` que no dice nada útil; ahora detecta que ya hay uno nuestro, avisa y se cierra. El aviso al recibir salió de una confusión real: el envío funcionaba pero la ventana del receptor no decía nada y parecía que no había llegado.
+
+Tres fallos por el camino, todos con test o comprobación después:
+
+1. **Los `.cmd` se escribieron con saltos LF.** cmd.exe solo entiende CRLF: se comía dos caracteres de cada línea («No se esperaba node en este momento»). Ahora son CRLF y ASCII puro.
+2. **Un `)` pegado a la orden siguiente** tras un `if`. Rehecho con `goto`.
+3. **Carpeta inválida** (`<carpeta nueva>`): se rendía; ahora explica que esos caracteres no valen y sigue con `Documents\recibidas`.
+
+### 3. ¿Dónde verlo en el código?
+
+- `recibir.cmd:1-19` · `enviar.cmd:1-19` · `dsh-bridge.cmd:1-15` — CRLF, ASCII y llamada al lanzador.
+- `bin/lanzador.js:22-35` — `prepararCarpeta`: crea la carpeta o cae en la de por defecto.
+- `bin/lanzador.js:43-70` — los modos `recibir`, `enviar` y `menu`.
+- `bin/dsh-bridge.js:249-263` — `hayReceptorPropio`: ¿ya hay un `serve` contestando?
+- `bin/dsh-bridge.js:290-330` — arranque con puerto libre y aviso de cuál se usó.
+- `src/net/servidor.js` — `alRecibir`, el aviso al receptor.
+- `src/core/import.js:270` — `titulo` en el resultado de la importación.
+- `test/lanzadores.test.js` — 4 tests (CRLF, ASCII, modos y nombres).
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 180` / `fail 0`**.
+2. Doble clic en `recibir.cmd` → pregunta carpeta → Enter → sale dirección y código. Con otra ventana de `recibir.cmd` abierta: «ya hay un dsh-bridge recibiendo…» y no abre un duplicado.
+3. `enviar.cmd` → abre el navegador con la interfaz.
+4. `dsh-bridge.cmd --version` → `dsh-bridge 0.2.0`.
+5. Enviar una conversación: el receptor imprime «✔ recibida «…» · 2.530 eventos · 14 adjuntos».
+6. Abre `TAREAS.md:271`: T22 en ✅.
+
 _(Fin del historial.)_

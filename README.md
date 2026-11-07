@@ -51,6 +51,19 @@ Si lo quieres como comando en el PATH, enlázalo con `npm link`.
 
 ## Uso
 
+### Doble clic, sin escribir nada
+
+En Windows hay tres lanzadores en la raíz del proyecto:
+
+| Fichero | Qué hace |
+|---|---|
+| **`recibir.cmd`** | Abre una ventana, pregunta la carpeta (Enter = `Documents\recibidas`) y se queda escuchando con su código |
+| **`enviar.cmd`** | Arranca la interfaz web y abre el navegador |
+| **`dsh-bridge.cmd`** | El menú; con argumentos se los pasa (`dsh-bridge.cmd list`) |
+
+Puedes hacer **accesos directos** en el escritorio apuntando a ellos (botón derecho →
+Nuevo → Acceso directo), y cambiar el icono. Necesitan Node.js instalado, nada más.
+
 ### El menú
 
 ```bash
