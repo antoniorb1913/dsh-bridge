@@ -28,6 +28,8 @@ import { attachmentHashes, listSessions } from "../src/core/sessions.js";
 import { decodeLogBuffer } from "../src/core/zstd.js";
 import { crearServidor, ipLocal } from "../src/net/servidor.js";
 import { enviarSesiones } from "../src/net/cliente.js";
+import { crearUiServidor } from "../src/net/ui.js";
+import { PUERTO_DESCUBRIR, crearRespondedor, descubrir } from "../src/net/descubrir.js";
 import {
   SeleccionError,
   formatearBytes,
@@ -39,7 +41,7 @@ import {
 } from "../src/cli/formato.js";
 import { CliError, parsearArgumentos, tiposManuales } from "../src/cli/opciones.js";
 
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 
 // Si alguien corta la salida (un `| head`, un `Select-Object -First`), no es un
 // error del programa: se termina en silencio y con código 0.
@@ -266,6 +268,19 @@ async function comandoServe(opciones) {
   const datos = servidor.datos;
   const ip = host === "0.0.0.0" ? ipLocal() ?? "127.0.0.1" : "127.0.0.1";
 
+  // Solo se anuncia en la red si está abierto a la red: si escucha en localhost,
+  // nadie de fuera podría llegar y anunciarse sería ruido (o una pista falsa).
+  let respondedor;
+  if (host === "0.0.0.0") {
+    respondedor = crearRespondedor({ tcpPuerto: puertoReal, estado: () => servidor.estado });
+    try {
+      await respondedor.iniciar();
+    } catch {
+      respondedor = undefined;
+      aviso("no he podido abrir el anuncio de descubrimiento (UDP 8788): se puede seguir usando con --ip");
+    }
+  }
+
   escribir("");
   escribir("  dsh-bridge · recibiendo conversaciones");
   escribir("  " + "─".repeat(58));
@@ -273,8 +288,10 @@ async function comandoServe(opciones) {
   escribir(`  Código    : ${datos.codigo}   (un solo uso, caduca ${formatearFecha(datos.expira)})`);
   escribir(`  Destino   : ${workspace ?? "(sin --workspace: solo se puede listar, no recibir)"}`);
   escribir(`  Límite    : ${formatearBytes(maxBytes ?? 2 * 1024 * 1024 * 1024)} por bundle`);
+  escribir(`  En la red : ${respondedor === undefined ? "solo por IP" : `se anuncia como «${respondedor.datos.nombre}» (UDP ${PUERTO_DESCUBRIR})`}`);
   escribir("");
   escribir("  En el otro equipo:");
+  escribir("    dsh-bridge discover            (lo encuentra solo)");
   escribir(`    dsh-bridge send --ip ${ip} --puerto ${puertoReal} --codigo ${datos.codigo} --sesion <id>`);
   escribir("");
   if (host === "0.0.0.0") {
@@ -291,7 +308,7 @@ async function comandoServe(opciones) {
     const parar = () => {
       escribir("");
       escribir("parando…");
-      servidor.cerrar().then(() => resolver(undefined), () => resolver(undefined));
+      Promise.allSettled([servidor.cerrar(), respondedor?.cerrar()]).then(() => resolver(undefined));
     };
     process.once("SIGINT", parar);
     process.once("SIGTERM", parar);
@@ -302,9 +319,28 @@ async function comandoServe(opciones) {
 /** Envía una o varias conversaciones al equipo que está escuchando. */
 async function comandoSend(opciones) {
   const home = resolveHome(opciones["dsh-home"]);
-  const ip = limpiarRuta(opciones.ip);
-  if (ip === "") throw new CliError("indica la IP del otro equipo con --ip (la enseña el comando serve)");
-  const puerto = opciones.puerto === undefined ? 8787 : Number(opciones.puerto);
+
+  let ip = limpiarRuta(opciones.ip);
+  let puerto = opciones.puerto === undefined ? 8787 : Number(opciones.puerto);
+
+  if (opciones.buscar === true) {
+    escribir("buscando equipos en la red durante 2 s…");
+    const todos = await descubrir({ esperaMs: 2000 });
+    const otros = todos.filter((equipo) => !equipo.esteEquipo);
+    // Si solo está este equipo se usa igualmente: sirve para probar en un PC.
+    const elegidos = otros.length > 0 ? otros : todos;
+    if (elegidos.length === 0) throw new CliError("no he encontrado ningún equipo esperando; arranca el otro con «serve --red» o usa --ip");
+    if (elegidos.length > 1) {
+      for (const equipo of elegidos) escribir(`  ${equipo.nombre}  ${equipo.ip}  ${equipo.puerto}`);
+      throw new CliError(`he encontrado ${elegidos.length} equipos: elige uno con --ip`);
+    }
+    if (otros.length === 0) aviso("el único equipo encontrado es este mismo: sigo con él (vale para probar en un solo PC)");
+    ip = elegidos[0].ip;
+    if (opciones.puerto === undefined) puerto = elegidos[0].puerto;
+    escribir(`encontrado «${elegidos[0].nombre}» en ${ip}:${puerto}`);
+  }
+
+  if (ip === "") throw new CliError("indica la IP del otro equipo con --ip, o usa --buscar");
   if (!Number.isInteger(puerto) || puerto < 1 || puerto > 65535) throw new CliError(`puerto no válido: ${opciones.puerto}`);
   const codigo = limpiarRuta(opciones.codigo);
   if (!/^\d{6}$/.test(codigo)) throw new CliError("el código son 6 dígitos (--codigo 482913)");
@@ -332,6 +368,84 @@ async function comandoSend(opciones) {
     escribir(`  adjuntos  : ${envio.respuesta.adjuntos?.copiados ?? 0} copiados, ${envio.respuesta.adjuntos?.yaEstaban ?? 0} ya estaban`);
     escribir(`  tamaño    : ${formatearBytes(envio.zipBytes)} en claro, ${formatearBytes(envio.cifradoBytes)} cifrado`);
   }
+  return 0;
+}
+
+/** Abre la interfaz web local en el navegador. */
+async function comandoUi(opciones) {
+  const home = resolveHome(opciones["dsh-home"]);
+  const puerto = opciones.puerto === undefined ? 8790 : Number(opciones.puerto);
+  if (!Number.isInteger(puerto) || puerto < 0 || puerto > 65535) throw new CliError(`puerto no válido: ${opciones.puerto}`);
+  if (opciones.red === true) {
+    throw new CliError("la interfaz solo se sirve en este equipo: puede leer tus conversaciones y no debe exponerse a la red");
+  }
+
+  const { tipos, origen } = leerTipos(opciones);
+  const ui = crearUiServidor({ home, puerto, tiposConocidos: tipos, origenCompat: origen });
+  const puertoReal = await ui.iniciar();
+  const url = `http://127.0.0.1:${puertoReal}/`;
+
+  escribir("");
+  escribir("  dsh-bridge · interfaz");
+  escribir("  " + "─".repeat(46));
+  escribir(`  Abre en el navegador : ${url}`);
+  escribir("  Solo accesible desde este equipo. Ctrl+C para parar.");
+  escribir("");
+
+  if (opciones.abrir === true) {
+    const orden =
+      process.platform === "win32"
+        ? ["cmd", ["/c", "start", "", url]]
+        : process.platform === "darwin"
+          ? ["open", [url]]
+          : ["xdg-open", [url]];
+    try {
+      spawn(orden[0], orden[1], { detached: true, stdio: "ignore" }).unref();
+    } catch {
+      aviso("no he podido abrir el navegador; copia la dirección a mano");
+    }
+  }
+
+  await new Promise((resolver) => {
+    const parar = () => {
+      escribir("");
+      escribir("parando…");
+      ui.cerrar().then(() => resolver(undefined), () => resolver(undefined));
+    };
+    process.once("SIGINT", parar);
+    process.once("SIGTERM", parar);
+  });
+  return 0;
+}
+
+/** Busca equipos con `serve` abierto en la red local. */
+async function comandoDiscover(opciones) {
+  const segundos = opciones.segundos === undefined ? 2 : Number(opciones.segundos);
+  if (!Number.isFinite(segundos) || segundos <= 0 || segundos > 30) throw new CliError(`--segundos debe estar entre 1 y 30: ${opciones.segundos}`);
+  const destino = opciones.destino === undefined ? "255.255.255.255" : limpiarRuta(opciones.destino);
+
+  escribir(`preguntando en la red durante ${segundos} s…`);
+  const encontrados = await descubrir({ destino, esperaMs: Math.round(segundos * 1000) });
+
+  if (encontrados.length === 0) {
+    aviso("no he encontrado ningún equipo esperando");
+    escribir("comprueba que el otro equipo tenga abierto «dsh-bridge serve --red --workspace <carpeta>»");
+    escribir("y que los dos estén en la misma red (el firewall de Windows debe permitir la aplicación)");
+    return 1;
+  }
+
+  escribir("");
+  const anchoNombre = Math.max(6, ...encontrados.map((equipo) => equipo.nombre.length));
+  escribir(`  ${"EQUIPO".padEnd(anchoNombre)}  ${"IP".padEnd(15)}  PUERTO  ESTADO`);
+  escribir(`  ${"─".repeat(anchoNombre + 40)}`);
+  for (const equipo of encontrados) {
+    const estado = equipo.emparejado ? "ya emparejado" : "esperando código";
+    const propio = equipo.esteEquipo ? "  (este equipo)" : "";
+    escribir(`  ${equipo.nombre.padEnd(anchoNombre)}  ${equipo.ip.padEnd(15)}  ${String(equipo.puerto).padEnd(6)}  ${estado}${propio}`);
+  }
+  escribir("");
+  escribir("  Para enviar:");
+  escribir("    dsh-bridge send --buscar --codigo <código> --sesion <id>");
   return 0;
 }
 
@@ -505,8 +619,8 @@ async function menu(home, opciones) {
       escribir("  " + "─".repeat(47));
       escribir("  1) Exportar una conversación a ZIP");
       escribir("  2) Importar un ZIP");
-      escribir("  3) Enviar por red a otro PC        (v0.2)");
-      escribir("  4) Recibir por red de otro PC      (v0.2)");
+      escribir("  3) Enviar por red (abre la interfaz web)");
+      escribir("  4) Recibir por red (queda escuchando con un código)");
       escribir("  5) Diagnóstico");
       escribir("  0) Salir");
       escribir("");
@@ -515,8 +629,18 @@ async function menu(home, opciones) {
       if (opcion === "0" || opcion.toLowerCase() === "q") break;
       if (opcion === "1") await menuExportar(rl, home, tipos, origen);
       else if (opcion === "2") await menuImportar(rl, home, tipos);
-      else if (opcion === "3" || opcion === "4") aviso("la transferencia por red llega en la v0.2; de momento se usa el ZIP");
-      else if (opcion === "5") comandoDoctor(opciones);
+      else if (opcion === "3") {
+        rl.close();
+        return await comandoUi({ ...opciones, abrir: opciones.abrir ?? true });
+      } else if (opcion === "4") {
+        const carpeta = (await rl.question("  Carpeta del proyecto donde guardar lo que llegue: ")).trim();
+        if (carpeta === "") {
+          aviso("hace falta una carpeta de destino: sin ella solo se podría listar");
+          continue;
+        }
+        rl.close();
+        return await comandoServe({ ...opciones, red: true, workspace: carpeta });
+      } else if (opcion === "5") comandoDoctor(opciones);
       else if (opcion !== "") aviso(`opción no válida: ${opcion}`);
       if (opcion !== "") await rl.question("  (Enter para continuar) ");
     }
@@ -556,6 +680,10 @@ async function principal(argv) {
       return comandoDoctor(opciones);
     case "serve":
       return comandoServe(opciones);
+    case "ui":
+      return comandoUi(opciones);
+    case "discover":
+      return comandoDiscover(opciones);
     case "send":
       return comandoSend(opciones);
     case "menu":

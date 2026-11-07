@@ -56,7 +56,9 @@ dsh-bridge/
 ├─ src/net/
 │  ├─ servidor.js             recepción en red: código de un solo uso y token     [T16 ✔]
 │  ├─ cifrado.js              AES-256-GCM con clave derivada del código           [T17 ✔]
-│  └─ cliente.js              enviar: emparejar, cifrar y subir el bundle         [T17 ✔]
+│  ├─ cliente.js              enviar: emparejar, cifrar y subir el bundle         [T17 ✔]
+│  ├─ descubrir.js            anuncio UDP y búsqueda de equipos en la red         [T19 ✔]
+│  └─ ui.js                   interfaz web local (token, CSP) y página de estado  [T18 ✔]
 ├─ src/core/
 │  ├─ zstd.js                 frames Zstandard, cabecera, comprimir/descomprimir  [T2 ✔]
 │  ├─ zip.js                  ZIP propio: escribir (store) y leer (store/deflate)  [T3 ✔]

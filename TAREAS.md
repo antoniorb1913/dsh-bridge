@@ -222,20 +222,39 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [ ] La interfaz web (T18) hará esto mismo desde el navegador
 
 ### T18 · Interfaz web mínima
-**Estado:** ⏳ Pendiente · **Depende de:** T17 · **Rama propuesta:** `feat/t18-ui-web`
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T17 · **Rama:** `feat/t18-ui-web` · **Commit:** `feat: interfaz web local para enviar conversaciones`
+**Archivos:** `src/net/ui.js`, `src/net/servidor.js`, `bin/dsh-bridge.js`, `src/cli/opciones.js`, `src/cli/formato.js`, `test/ui.test.js`
 
-- Servida por el propio tool (sin instalar nada en el otro equipo)
-- Listar sesiones, elegir, ver progreso; CSP estricta y `textContent` (REGLA 3, apartado «Interfaz web»)
+- [x] `dsh-bridge ui` sirve la interfaz en `127.0.0.1` (por defecto 8790; `--abrir` lanza el navegador): lista de conversaciones con casillas, formulario IP/puerto/código, botón de envío y barra de progreso
+- [x] **Token por sesión** en un `<meta>` de la página; toda la API lo exige en `x-dsh-token` (probado: 401 sin él). La interfaz **rechaza `--red`**: puede leer tus conversaciones y no debe exponerse
+- [x] **CSP estricta** (`default-src 'none'; script-src 'self'…`), cero código o estilos inline, pintado con `textContent` (comprobado con tests que además compilan el JS)
+- [x] El envío corre en segundo plano con un **trabajo** (`/api/trabajos/<id>`) y la página va preguntando: sin bloquear el navegador durante los 693 MB
+- [x] `serve` sirve además una **página de estado** en `/`: dirección, código (o «ya usado»), caducidad, destino y emparejamiento, con sus estilos en `/estado.css`
+- [x] **La página dice de qué almacén lee** y **separa las que ve la app de las que solo están en disco** (`7 visibles · 115 en disco`, etiqueta «no registrada», filtro para ver todas): nació de una confusión real del usuario al ver 115 donde su panel enseña 7
+- [x] 9 tests nuevos (159 en total) y **prueba real**: página con CSP, 401 sin token, **115 conversaciones listadas**, separación visibles/huérfanas, y un envío lanzado por la API igual que el botón → «Organizar proyecto tarjeta» (2.530 eventos, 14 adjuntos) recibido en el equipo de pruebas
 
 ### T19 · Descubrimiento en la red (`discover`)
-**Estado:** ⏳ Pendiente · **Depende de:** T18 · **Rama propuesta:** `feat/t19-descubrir`
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T18 · **Rama:** `feat/t19-descubrir` · **Commit:** `feat: descubrimiento en la red y cierre de la v0.2 (0.2.0)` (junto con T20)
+**Archivos:** `src/net/descubrir.js`, `src/net/ui.js`, `bin/dsh-bridge.js`, `src/cli/opciones.js`, `src/cli/formato.js`, `test/descubrir.test.js`, `test/ui.test.js`
 
-- UDP broadcast para encontrar equipos con `serve` sin escribir IPs a mano
+- [x] El receptor se anuncia por **UDP en el puerto 8788**, solo cuando escucha abierto a la red (`--red`); si está en localhost no se anuncia (nadie podría llegar)
+- [x] La respuesta lleva **nombre del equipo, puerto y si ya está emparejado**, y **nunca** el código ni nada del contenido (hay un test que lo fija)
+- [x] `dsh-bridge discover` pregunta (3 latidos) y enseña una tabla: equipo, IP, puerto y estado, marcando «(este equipo)»
+- [x] `dsh-bridge send --buscar …` encuentra el equipo y envía sin escribir la IP; si hay 0 o más de 1, explica qué hacer
+- [x] En la interfaz web: botón **«Buscar en la red»** que rellena un desplegable con los equipos encontrados y, al elegir uno, pone IP y puerto
+- [x] 8 tests nuevos (167 en total) y **prueba real con difusión**: `discover` encontró `portatil-de-prueba` en `192.168.1.141`, y `send --buscar` mandó la conversación (2.530 eventos, 14 adjuntos) sin escribir la IP
+- [x] **Corregido al probarlo en un solo PC:** `send --buscar` descartaba «este equipo» y se quedaba sin candidatos; ahora, si es el único, lo usa avisando. Probado también dentro de WSL/Ubuntu (donde `serve` se anuncia como `DESKTOP-S22K5U6`)
 
 ### T20 · Tests de red, documentación y cierre de v0.2
-**Estado:** ⏳ Pendiente · **Depende de:** T19 · **Rama propuesta:** `test/t20-cierre-v02`
+**Estado:** 👀 Esperando tu OK · **Depende de:** T19 · **Rama propuesta:** `feat/t19-descubrir` (el mismo commit que T19)
+**Archivos:** `README.md`, `CHANGELOG.md`, `package.json`, `bin/dsh-bridge.js`, `src/core/pack.js`, `TAREAS.md`, `HISTORIAL.md`
 
-- Tests de servidor y cliente, README de la parte de red, `CHANGELOG.md` 0.2.0
+- [x] Tests de red ya cubiertos en T16–T19: **167 pruebas, 0 fallos** (servidor, cifrado, cliente, interfaz y descubrimiento)
+- [x] README: sección **«Por red, sin USB»** con el flujo de los dos equipos, la tabla de qué se protege, el modo `ui` y el aviso del firewall
+- [x] `CHANGELOG.md` **0.2.0** con añadido, cambiado y corregido (incluidos los dos fallos que encontró la prueba grande)
+- [x] Versión **0.2.0** en `package.json`, en el binario y en la procedencia que anota cada bundle
+- [x] El **menú** ya no anuncia la red como futura: opción 3 abre la interfaz web y la 4 arranca `serve` pidiendo la carpeta de destino
+- [x] `npm pack --dry-run` → **22 ficheros, 60,8 kB** (entran los cinco módulos nuevos)
 
 ### T21 · Selector nativo de ficheros y carpetas
 **Estado:** ⏳ Pendiente · **Depende de:** T18 · **Rama propuesta:** `feat/t21-selector`

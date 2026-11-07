@@ -24,6 +24,7 @@ import path from "node:path";
 import { importarBundle, ImportError } from "../core/import.js";
 import { listSessions } from "../core/sessions.js";
 import { CifradoError, descifrarArchivo } from "./cifrado.js";
+import { CspUi, ESTILOS_ESTADO, paginaEstado } from "./ui.js";
 
 /** Error del servidor: puerto ocupado, código mal formado, etc. */
 export class ServidorError extends Error {
@@ -195,6 +196,16 @@ export function crearServidor(opciones) {
     ultimoRecibido: undefined
   };
 
+  const datosServidor = () => ({
+    host,
+    puerto: servidor.address()?.port ?? puertoPedido,
+    codigo: estado.codigoCanjeado ? "" : estado.codigo,
+    expira: new Date(estado.codigoExpira),
+    ttlMs,
+    emparejado: estado.emparejado,
+    workspace
+  });
+
   const tokenValido = (req) => {
     const autorizacion = String(req.headers.authorization ?? "");
     const token = autorizacion.startsWith("Bearer ") ? autorizacion.slice(7) : "";
@@ -206,6 +217,15 @@ export function crearServidor(opciones) {
   const servidor = http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url ?? "/", "http://localhost");
+
+      if (req.method === "GET" && (url.pathname === "/" || url.pathname === "/estado.html")) {
+        responder(res, 200, paginaEstado({ ...datosServidor() }), "text/html; charset=utf-8", { "content-security-policy": CspUi });
+        return;
+      }
+      if (req.method === "GET" && url.pathname === "/estado.css") {
+        responder(res, 200, ESTILOS_ESTADO, "text/css; charset=utf-8");
+        return;
+      }
 
       if (req.method === "GET" && url.pathname === "/estado") {
         responder(res, 200, {
@@ -352,15 +372,7 @@ export function crearServidor(opciones) {
   return {
     /** Datos que se enseñan por consola (el código desaparece al canjearlo). */
     get datos() {
-      return {
-        host,
-        puerto: servidor.address()?.port ?? puertoPedido,
-        codigo: estado.codigoCanjeado ? "" : estado.codigo,
-        expira: new Date(estado.codigoExpira),
-        ttlMs,
-        emparejado: estado.emparejado,
-        workspace
-      };
+      return datosServidor();
     },
     get estado() {
       return {

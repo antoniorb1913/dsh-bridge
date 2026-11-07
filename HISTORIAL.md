@@ -697,4 +697,111 @@ La prueba con la conversación grande encontró **dos fallos que los tests no ve
 5. Regresión del fallo grave: `test/red.test.js` «un bundle demasiado grande se rechaza y el servidor sigue vivo».
 6. Abre `TAREAS.md:208`: T17 en ✅ y T18 en ⏳.
 
-_(Sin más entradas todavía: la T18 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
+---
+
+## 2026-11-07 · T18 — Interfaz web local
+
+**Estado:** ✅ Completada
+**Rama:** `feat/t18-ui-web`
+**Commit:** `feat: interfaz web local para enviar conversaciones`
+**Archivos:** `src/net/ui.js`, `src/net/servidor.js`, `bin/dsh-bridge.js`, `src/cli/opciones.js`, `src/cli/formato.js`, `test/ui.test.js`, `TAREAS.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+La transferencia ya se hace con el ratón: `dsh-bridge ui --abrir` sirve una página en `127.0.0.1` con la lista de conversaciones (casillas), el formulario con la IP, el puerto y el código, un botón de envío y la barra de progreso. El envío va en segundo plano, así que la página no se queda colgada aunque sean 693 MB. El servidor de recepción sirve además una página de estado con su código. Y la interfaz **dice de qué almacén lee** y **separa las conversaciones que ve la app de las que solo están en disco**.
+
+### 2. ¿Por qué?
+
+Hasta ahora todo era consola: para mover una conversación había que copiar una IP y un id. Y una página no puede ser un atajo inseguro: puede leer tus conversaciones y mandarlas, así que va con token por sesión, CSP estricta, sin código inline y solo en localhost.
+
+Lo del almacén y el «no registrada» salió de una confusión real del usuario: la página decía 115 conversaciones y su panel enseñaba 7. Las 115 son las que hay en disco; las 7, las que la app tiene apuntadas en `workspace.json`. Las demás están huérfanas (rutas de cuando usaba WSL) y no se habían borrado. Ahora se ve a la primera.
+
+### 3. ¿Dónde verlo en el código?
+
+- `src/net/ui.js:120-175` — el HTML de la página (sin código ni estilos inline).
+- `src/net/ui.js:177-330` — el guion del navegador: pinta con `textContent`, filtro visibles/todas y sondeo del trabajo.
+- `src/net/ui.js:340-420` — `crearUiServidor`: rutas, token obligatorio y `POST /api/enviar` en segundo plano.
+- `src/net/ui.js:100-118` — `calcularVisibles`: qué conversaciones enseña la app según el registro.
+- `src/net/ui.js:520-560` — `paginaEstado`, la página del receptor.
+- `src/net/servidor.js:180-190` — rutas `/` y `/estado.css` del receptor.
+- `bin/dsh-bridge.js:339-390` — `comandoUi` (`--abrir` incluido).
+- `test/ui.test.js` — 9 tests, incluido el del envío real y el de visibles frente a huérfanas.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 159` / `fail 0`**.
+2. `node bin/dsh-bridge.js ui --abrir` → la página debe decir **«7 visibles · 115 en disco»** (en este equipo) y el almacén `C:\Users\MSI-PC\.dsh`.
+3. Cambia el desplegable a «Todas»: aparecen las 115 con la etiqueta «no registrada» en las huérfanas.
+4. En el navegador, `http://127.0.0.1:8790/api/sesiones` sin token → 401.
+5. Con dos consolas (receptor con `--dsh-home` temporal), marcar una conversación y pulsar «Enviar seleccionadas» → barra de progreso y resultado con eventos y adjuntos.
+6. Abre `TAREAS.md:224`: T18 en ✅ y T19 en ⏳.
+
+---
+
+## 2026-11-07 · T19 — Descubrimiento en la red
+
+**Estado:** ✅ Completada
+**Rama:** `feat/t19-descubrir`
+**Commit:** `feat: descubrimiento en la red y cierre de la v0.2 (0.2.0)` (junto con T20)
+**Archivos:** `src/net/descubrir.js`, `src/net/ui.js`, `bin/dsh-bridge.js`, `src/cli/opciones.js`, `src/cli/formato.js`, `test/descubrir.test.js`, `test/ui.test.js`, `TAREAS.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+El equipo que recibe se anuncia por **UDP en el 8788** (solo cuando escucha abierto a la red), y el que envía lo encuentra con `dsh-bridge discover` o directamente con `send --buscar`, sin escribir la IP. La interfaz web tiene un botón **«Buscar en la red»** que rellena la IP y el puerto al elegir un equipo.
+
+### 2. ¿Por qué?
+
+Copiar la IP es el paso que más se falla: se cambia con el DHCP, se confunde con la del router, se copia mal. Preguntar en la red es lo que hace cualquier impresora o televisor. Y el anuncio va con lo mínimo: nombre, puerto y si ya está emparejado; **nunca** el código ni nada del contenido.
+
+### 3. ¿Dónde verlo en el código?
+
+- `src/net/descubrir.js:29-90` — `crearRespondedor`: contesta a la pregunta con nombre y puerto.
+- `src/net/descubrir.js:100-160` — `descubrir`: tres latidos, recoge respuestas y deduplica por IP.
+- `bin/dsh-bridge.js:402-430` — `comandoDiscover`.
+- `bin/dsh-bridge.js:320-345` — `send --buscar` (y el arreglo para un solo PC).
+- `src/net/ui.js` — botón «Buscar en la red» y `POST /api/descubrir`.
+- `test/descubrir.test.js` — 8 tests, incluido el que fija que el código no viaja.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 167` / `fail 0`**.
+2. Dos consolas: en una `serve --red --workspace <carpeta>`; en la otra `discover` → aparece el equipo con su IP y puerto.
+3. `send --buscar --codigo <código> --sesion <id>` → envía sin escribir la IP.
+4. Comprobado en este equipo: `discover` encontró `DESKTOP-S22K5U6` en `192.168.1.141`, el envío llegó (2.530 eventos, 14 adjuntos) y el código se leyó de la página de estado del receptor. También probado dentro de WSL/Ubuntu.
+5. Abre `TAREAS.md:236`: T19 en ✅ y T20 en ⏳.
+
+---
+
+## 2026-11-07 · T20 — Cierre de la v0.2
+
+**Estado:** 👀 Esperando tu OK
+**Rama:** `test/t20-cierre-v02` (o la de T19, en el mismo PR)
+**Commit:** `feat: descubrimiento en la red y cierre de la v0.2 (0.2.0)` (el mismo que T19)
+**Archivos:** `README.md`, `CHANGELOG.md`, `package.json`, `bin/dsh-bridge.js`, `src/core/pack.js`, `TAREAS.md`, `HISTORIAL.md`
+
+### 1. ¿Qué he realizado?
+
+Documenté la parte de red en el README («Por red, sin USB»): el flujo de los dos equipos con sus salidas reales, la tabla de qué se protege, el modo `ui` y el aviso del firewall. Añadí la entrada **0.2.0** del `CHANGELOG` (añadido, cambiado y corregido), subí la versión a **0.2.0** en el paquete, en el binario y en la procedencia que anota cada bundle, y arreglé el **menú**, que seguía anunciando la red como futura.
+
+### 2. ¿Por qué?
+
+Una versión que se puede usar pero que se documenta como si no existiera es una versión que nadie encuentra. Y el menú era lo primero que veía el usuario: ofrecía «(v0.2)» y no hacía nada. Ahora la opción 3 abre la interfaz web y la 4 arranca la recepción pidiendo la carpeta de destino.
+
+### 3. ¿Dónde verlo en el código?
+
+- `README.md:91-160` — «Por red, sin USB»: `serve`, `send --buscar`, `ui` y las garantías.
+- `CHANGELOG.md:8-40` — la entrada 0.2.0.
+- `package.json:3` — `"version": "0.2.0"`.
+- `bin/dsh-bridge.js:44` — `VERSION`; `src/core/pack.js:37` — `VERSION_TOOL`.
+- `bin/dsh-bridge.js:618-640` — el menú con las opciones 3 y 4 conectadas.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 167` / `fail 0`**.
+2. `node bin/dsh-bridge.js --version` → `dsh-bridge 0.2.0`.
+3. `node bin/dsh-bridge.js --help` → aparecen `serve`, `ui`, `discover` y `send --buscar`.
+4. `npm pack --dry-run` → **22 ficheros, 60,8 kB**.
+5. `node bin/dsh-bridge.js` (sin argumentos, en una terminal de verdad) → el menú ya no dice «(v0.2)»; la opción 3 abre la interfaz y la 4 pide carpeta y arranca la recepción.
+6. Abre `TAREAS.md:248`: T20 en 👀 (pasará a ✅ con tu «sí»).
+
+_(Sin más entradas todavía: la T20 se cerrará cuando respondas «sí».)_
