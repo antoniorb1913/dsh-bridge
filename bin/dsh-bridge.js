@@ -519,7 +519,7 @@ async function comandoSend(opciones) {
   if (ip === "") throw new CliError("indica la IP del otro equipo con --ip, o usa --buscar");
   if (!Number.isInteger(puerto) || puerto < 1 || puerto > 65535) throw new CliError(`puerto no válido: ${opciones.puerto}`);
   const codigo = limpiarRuta(opciones.codigo);
-  if (!/^\d{6}$/.test(codigo)) throw new CliError("el código son 6 dígitos (--codigo 482913)");
+  if (!/^\d{8}$/.test(codigo)) throw new CliError("el código son 8 dígitos (--codigo 48291374)");
 
   const sesiones = Array.isArray(opciones.sesion) ? opciones.sesion : opciones.sesion === undefined ? [] : [opciones.sesion];
   if (sesiones.length === 0) throw new CliError("indica qué conversación enviar con --sesion <id> (el id sale en `list`)");

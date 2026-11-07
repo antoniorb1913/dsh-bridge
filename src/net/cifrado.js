@@ -1,7 +1,7 @@
 /**
  * Cifrado del transporte entre equipos.
  *
- * El secreto compartido es el **código de 6 dígitos**, que se teclea en los dos
+ * El secreto compartido es el **código de 8 dígitos**, que se teclea en los dos
  * lados y **nunca viaja por la red**. De él se deriva una clave con `scrypt`
  * (lento a propósito) y un `salt` aleatorio por envío; el resto es AES-256-GCM,
  * que además de cifrar autentica: si alguien toca un byte, falla.
@@ -29,7 +29,7 @@ const LARGO_TAG = 16;
 const CABECERA = MAGIA.length + LARGO_SALT + LARGO_NONCE;
 
 /**
- * Clave de 32 bytes a partir del código (que son 6 dígitos).
+ * Clave de 32 bytes a partir del código (que son 8 dígitos).
  * `scrypt` con N=2^14 cuesta ~50 ms: suficiente para el uso y caro para probar
  * un millón de códigos.
  * @param {string} codigo
@@ -38,7 +38,10 @@ const CABECERA = MAGIA.length + LARGO_SALT + LARGO_NONCE;
 export function derivarClave(codigo, salt) {
   if (typeof codigo !== "string" || codigo === "") throw new CifradoError("falta el código para cifrar");
   if (!Buffer.isBuffer(salt) || salt.length !== LARGO_SALT) throw new CifradoError("salt inválido");
-  return crypto.scryptSync(codigo, salt, 32, { N: 2 ** 14, r: 8, p: 1 });
+  // N=2^15 (32 MB por intento): encarece mucho la fuerza bruta **offline** si
+  // alguien captura el paquete en la red. Medido: ~50 ms aquí, y probar los
+  // 100 millones de códigos de 8 dígitos pasaría de meses por núcleo.
+  return crypto.scryptSync(codigo, salt, 32, { N: 2 ** 15, r: 8, p: 1, maxmem: 96 * 1024 * 1024 });
 }
 
 /**

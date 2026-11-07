@@ -12,7 +12,7 @@ dependencias: solo Node.js ≥ 22.15.
 ### Añadido
 
 - **`serve`**: el equipo que recibe se queda escuchando (HTTP en la red local) con un
-  **código de 6 dígitos de un solo uso**, caducidad de 10 minutos y máximo de 5 intentos.
+  **código de 8 dígitos de un solo uso**, caducidad de 10 minutos y máximo de 5 intentos.
   Al emparejarse entrega un token; sin él no se lista ni se recibe nada. Por defecto solo
   escucha en `127.0.0.1`; `--red` lo abre a la red y lo avisa.
 - **`send`**: envía una o varias conversaciones. El bundle viaja **cifrado con

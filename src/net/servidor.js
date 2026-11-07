@@ -6,7 +6,7 @@
  *
  *   1. **Por defecto solo escucha en localhost.** Abrirse a la red es una
  *      decisión explícita (`host: "0.0.0.0"`), y se avisa.
- *   2. **Código de 6 dígitos, un solo uso, con caducidad y límite de intentos.**
+ *   2. **Código de 8 dígitos, un solo uso, con caducidad y límite de intentos.**
  *      Se compara en tiempo constante y nunca se devuelve al cliente.
  *   3. **El resto de la conversación va con un token** que se emite al
  *      emparejarse y caduca; sin token no se lista ni se recibe nada.
@@ -51,9 +51,9 @@ export function ipLocal() {
   return privada ?? candidatas[0];
 }
 
-/** Código nuevo de 6 dígitos, sin sesgo y siempre con los ceros delante. */
+/** Código nuevo de 8 dígitos, sin sesgo y siempre con los ceros delante. */
 export function crearCodigo() {
-  return String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
+  return String(crypto.randomInt(0, 100_000_000)).padStart(8, "0");
 }
 
 /** Comparación en tiempo constante para no delatar el código por el tiempo. */
@@ -181,7 +181,7 @@ export function crearServidor(opciones) {
   const workspace = opciones.workspace;
 
   const codigoInicial = opciones.codigo ?? crearCodigo();
-  if (!/^\d{6}$/.test(codigoInicial)) throw new ServidorError(`el código debe tener 6 dígitos: ${codigoInicial}`);
+  if (!/^\d{8}$/.test(codigoInicial)) throw new ServidorError(`el código debe tener 8 dígitos: ${codigoInicial}`);
 
   const estado = {
     /** El código se guarda aunque se canjee: hace falta para descifrar. */

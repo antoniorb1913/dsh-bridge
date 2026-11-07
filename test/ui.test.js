@@ -16,7 +16,7 @@ import { crearServidor } from "../src/net/servidor.js";
 import { crearUiServidor, paginaEstado } from "../src/net/ui.js";
 import { carpetaTemporal, crearCasaFalsa } from "./ayudas/entorno.js";
 
-const CODIGO = "135790";
+const CODIGO = "13579024";
 
 async function montarUi() {
   const casa = crearCasaFalsa();
@@ -97,7 +97,7 @@ test("la API valida lo que le llega", async () => {
       body: JSON.stringify({ ip: "127.0.0.1", codigo: "12", sesiones: ["x"] })
     });
     assert.equal(codigoMalo.status, 400);
-    assert.match((await codigoMalo.json()).detalle, /6 dígitos/);
+    assert.match((await codigoMalo.json()).detalle, /8 dígitos/);
 
     const sinSesiones = await fetch(montado.url + "/api/enviar", {
       method: "POST",
@@ -224,6 +224,31 @@ test("la página ofrece buscar equipos en la red", async () => {
     assert.equal(respuesta.status, 200);
     const datos = await respuesta.json();
     assert.ok(Array.isArray(datos.equipos), "debe devolver una lista de equipos");
+  } finally {
+    await montado.cerrar();
+  }
+});
+
+test("rechaza un Host que no es local (DNS rebinding)", async () => {
+  const montado = await montarUi();
+  try {
+    const http = await import("node:http");
+    const pedir = (host) =>
+      new Promise((resolver, rechazar) => {
+        const peticion = http.request(
+          { host: "127.0.0.1", port: new URL(montado.url).port, path: "/api/sesiones", headers: { host, "x-dsh-token": montado.token } },
+          (res) => {
+            res.resume();
+            resolver(res.statusCode);
+          }
+        );
+        peticion.on("error", rechazar);
+        peticion.end();
+      });
+
+    assert.equal(await pedir("evil.example.com"), 403, "un dominio ajeno no debe poder leer la API");
+    assert.equal(await pedir(`127.0.0.1:${new URL(montado.url).port}`), 200);
+    assert.equal(await pedir("localhost"), 200);
   } finally {
     await montado.cerrar();
   }

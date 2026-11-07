@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tests de red: un servidor de verdad y el cliente enviando por loopback.
  * Comprueba el ciclo completo: emparejar, exportar, cifrar, subir, descifrar e
  * importar en el almacén destino.
@@ -19,7 +19,7 @@ import { cifrar } from "../src/net/cifrado.js";
 import { crearServidor } from "../src/net/servidor.js";
 import { carpetaTemporal, crearCasaFalsa } from "./ayudas/entorno.js";
 
-const CODIGO = "482913";
+const CODIGO = "48291374";
 
 /** Monta origen, destino y servidor escuchando en un puerto libre. */
 async function montarRed(opciones = {}) {
@@ -113,7 +113,7 @@ test("con el código equivocado no se empareja y no se envía nada", async () =>
           sesiones: [red.origen.sesiones.texto],
           ip: red.ip,
           puerto: red.puerto,
-          codigo: "000000",
+          codigo: "00000000",
           tiposConocidos: TIPOS_CONOCIDOS_020_RC2
         }),
       (error) => {

@@ -279,7 +279,7 @@ node bin/dsh-bridge.js doctor
 ```
 
 **Over the network (v0.2):** the receiving machine runs
-`serve --red --workspace <folder>` and shows a six-digit one-time code; the sending one
+`serve --red --workspace <folder>` and shows an eight-digit one-time code; the sending one
 runs `send --buscar --codigo <code> --sesion <id>` (discovery over UDP), or
 `ui --abrir` for a local web page with a list, buttons and a progress bar. The bundle
 travels encrypted with AES-256-GCM, the key derived from the code with scrypt; the code

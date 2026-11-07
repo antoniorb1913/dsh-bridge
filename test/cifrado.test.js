@@ -11,7 +11,7 @@ import path from "node:path";
 
 import { CifradoError, cifrar, cifrarArchivo, derivarClave, descifrar, descifrarArchivo } from "../src/net/cifrado.js";
 
-const CODIGO = "482913";
+const CODIGO = "48291374";
 const carpetaTemporal = () => fs.mkdtempSync(path.join(os.tmpdir(), "dsh-bridge-cifrado-"));
 
 test("cifra y descifra un buffer", () => {
