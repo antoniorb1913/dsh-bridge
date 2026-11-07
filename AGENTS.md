@@ -54,7 +54,9 @@ dsh-bridge/
 │  ├─ opciones.js             argumentos, alias en castellano y errores de uso    [T11 ✔]
 │  └─ formato.js              tablas, tamaños, fechas y selecciones (1,3 · 2-4)    [T11 ✔]
 ├─ src/net/
-│  └─ servidor.js             recepción en red: código de un solo uso y token     [T16 ✔]
+│  ├─ servidor.js             recepción en red: código de un solo uso y token     [T16 ✔]
+│  ├─ cifrado.js              AES-256-GCM con clave derivada del código           [T17 ✔]
+│  └─ cliente.js              enviar: emparejar, cifrar y subir el bundle         [T17 ✔]
 ├─ src/core/
 │  ├─ zstd.js                 frames Zstandard, cabecera, comprimir/descomprimir  [T2 ✔]
 │  ├─ zip.js                  ZIP propio: escribir (store) y leer (store/deflate)  [T3 ✔]
