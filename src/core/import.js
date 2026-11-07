@@ -228,7 +228,19 @@ export function importarBundle(archivoZip, opciones) {
   const nombreLog = `session.v${header.version}.jsonl.zstd`;
   const rutaLogDestino = path.join(carpetaSesion, nombreLog);
 
-  const titulo = opciones.title ?? meta?.sesion?.titulo ?? nombreBase(rutaCanonica);
+  /**
+ * Título con el que se registra el workspace.
+ *
+ * Es el **nombre de la carpeta del proyecto**, no el título de la conversación:
+ * si el chat se llama «Probar app para pasar sesiones» y vive en `juego`, en la
+ * barra lateral tiene que salir «juego» (si no, cada conversación importada
+ * crearía un «proyecto» con nombre de chat).
+ */
+const tituloWorkspace = opciones.title ?? meta?.workspace?.titulo ?? nombreBase(rutaCanonica);
+/** Título de la conversación, solo para los mensajes. */
+const tituloConversacion = meta?.sesion?.titulo ?? nombreBase(rutaCanonica);
+
+const titulo = tituloConversacion;
 
   if (opciones.seco === true) {
     return {
@@ -262,7 +274,7 @@ export function importarBundle(archivoZip, opciones) {
   }
 
   // 3. Registro del workspace (sin esto la app no la lista).
-  const registro = registrarSesion(home, { path: rutaCanonica, title: titulo, sessionId }, { appAbierta: false });
+  const registro = registrarSesion(home, { path: rutaCanonica, title: tituloWorkspace, sessionId }, { appAbierta: false });
 
   return {
     seco: false,
