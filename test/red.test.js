@@ -10,7 +10,7 @@ import http from "node:http";
 import path from "node:path";
 
 import { TIPOS_CONOCIDOS_020_RC2 } from "../src/core/compat.js";
-import { canonicalize, sessionsRoot } from "../src/core/paths.js";
+import { canonicalize, samePath, sessionsRoot } from "../src/core/paths.js";
 import { leerRegistro, validarRegistro } from "../src/core/registry.js";
 import { listSessions } from "../src/core/sessions.js";
 import { decodeLogBuffer } from "../src/core/zstd.js";
@@ -246,7 +246,12 @@ test("el servidor avisa por consola cuando recibe algo", async () => {
     assert.ok(aviso !== undefined, "el receptor debe avisar de lo que llega");
     assert.equal(aviso.titulo, "Conversación de texto");
     assert.ok(aviso.eventos > 0);
-    assert.equal(aviso.workspace, red.workspace);
+    // En Windows el temporal puede venir con nombre corto (RUNNER~1) y el
+    // programa devuelve la ruta larga real: se comparan las dos canonicalizadas.
+    assert.ok(
+      samePath(aviso.workspace, canonicalize(red.workspace)),
+      `esperaba ${canonicalize(red.workspace)} y llegó ${aviso.workspace}`
+    );
     assert.equal(typeof aviso.adjuntos.copiados, "number");
   } finally {
     await red.cerrar();
@@ -296,7 +301,10 @@ test("el receptor puede preguntar la carpeta y usarla al importar", async () => 
     assert.equal(preguntas.length, 1, "debe preguntar una vez por cada conversación");
     const recibidas = listSessions(red.destino, { full: true });
     assert.equal(recibidas.length, 1);
-    assert.equal(recibidas[0].cwd, destinoElegido, "la conversación va a la carpeta elegida, no a la fija");
+    assert.ok(
+      samePath(recibidas[0].cwd, canonicalize(destinoElegido)),
+      "la conversación va a la carpeta elegida, no a la fija: " + recibidas[0].cwd
+    );
   } finally {
     fs.rmSync(destinoElegido, { recursive: true, force: true });
     await red.cerrar();
@@ -374,7 +382,10 @@ test("si el receptor cancela, la conversación va a la carpeta del emisor", asyn
     });
     const recibidas = listSessions(red.destino, { full: true });
     assert.equal(recibidas.length, 1);
-    assert.equal(recibidas[0].cwd, path.join(espejo, "bar"));
+    assert.ok(
+      samePath(recibidas[0].cwd, canonicalize(path.join(espejo, "bar"))),
+      "esperaba " + canonicalize(path.join(espejo, "bar")) + " y llegó " + recibidas[0].cwd
+    );
   } finally {
     fs.rmSync(espejo, { recursive: true, force: true });
     await red.cerrar();

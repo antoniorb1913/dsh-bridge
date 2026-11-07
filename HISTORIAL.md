@@ -917,4 +917,35 @@ El usuario lo pidió tal cual: «que se guarde en la carpeta que tiene el emisor
 3. En el receptor: `node bin/dsh-bridge.js list` → la conversación aparece **una sola vez**.
 4. Abre `TAREAS.md:272`: T23 en 👀 (pasa a ✅ con tu «sí»).
 
+---
+
+## 2026-11-07 · T24 — Pruebas de red tolerantes a las rutas cortas de Windows
+
+**Estado:** 👀 Esperando tu OK (pendiente de que el CI salga verde)
+**Rama:** `fix/ci-rutas-cortas`
+**Commit:** `test: compara rutas canonicalizadas para que el CI de Windows pase`
+**Archivos:** `test/red.test.js`, `TAREAS.md`, `HISTORIAL.md`
+
+### 1. ¿Qué he realizado?
+
+El CI de `main` estaba **en rojo**: de 184 pruebas pasaban 181 y fallaban 3, solo en los tres trabajos de Windows. Las tres comparaban la ruta del workspace con `assert.equal`, y en el runner `%TEMP%` se llama `C:\Users\RUNNER~1\…` (nombre corto 8.3) mientras el programa devuelve la ruta larga real `C:\Users\runneradmin\…`. Ahora se comparan las dos canonicalizadas con `samePath`.
+
+### 2. ¿Por qué?
+
+El programa estaba bien; el fallo era de las pruebas, que comparaban texto en vez de rutas. Confiar en que `os.tmpdir()` y la ruta real son idénticas funciona en un equipo normal y falla en un entorno con nombres cortos, que es exactamente lo que un CI tiene que detectar. Es la tercera vez que el CI encuentra algo que yo no veía en local, y por eso está ahí.
+
+### 3. ¿Dónde verlo en el código?
+
+- `test/red.test.js:13` — se importa `samePath` además de `canonicalize`.
+- `test/red.test.js:249-253` — el aviso al recibir compara `canonicalize(red.workspace)`.
+- `test/red.test.js:300-303` — carpeta elegida en el diálogo.
+- `test/red.test.js:380-383` — carpeta espejo del emisor.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. En local: `npm test` → **184 / 0 fallos** (ya pasaba antes; el fallo solo aparece con nombres cortos).
+2. En GitHub: al subir la rama, los **7 trabajos** deben salir en verde, incluidos los tres de Windows.
+3. Si quieres ver la causa con tus ojos: en el log antiguo, `runneradmin` (lo que devuelve el programa) frente a `RUNNER~1` (lo que esperaba la prueba).
+4. Abre `TAREAS.md`: T24 en 👀 hasta que el CI confirme.
+
 _(Fin del historial.)_
