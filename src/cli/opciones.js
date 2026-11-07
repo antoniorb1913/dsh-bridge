@@ -33,13 +33,14 @@ const INTERRUPTORES = new Set([
   "--rapido",
   "--si",
   "--quiet",
+  "--red",
   "--help",
   "-h",
   "--version",
   "-v"
 ]);
 
-export const COMANDOS = ["list", "export", "import", "send", "receive", "doctor", "help"];
+export const COMANDOS = ["list", "export", "import", "serve", "send", "doctor", "help"];
 
 const ALIAS_COMANDOS = {
   listar: "list",
@@ -50,8 +51,10 @@ const ALIAS_COMANDOS = {
   import: "import",
   enviar: "send",
   send: "send",
-  recibir: "receive",
-  receive: "receive",
+  servir: "serve",
+  serve: "serve",
+  recibir: "serve",
+  receive: "serve",
   doctor: "doctor",
   diagnostico: "doctor",
   ayuda: "help",

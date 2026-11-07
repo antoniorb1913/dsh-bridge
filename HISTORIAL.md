@@ -610,4 +610,46 @@ Todo lo anterior estaba probado con casas falsas y en el mismo equipo. La prueba
 4. Abrir la app allí: la conversación aparece en el workspace elegido y se abre con sus imágenes (comprobado por el usuario).
 5. Abre `TAREAS.md:181`: T15 en ✅. **La v0.1 está completa.**
 
-_(Sin más entradas todavía: la T16 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
+---
+
+## 2026-11-07 · T16 — Servidor de recepción con código de un solo uso
+
+**Estado:** ✅ Completada
+**Rama:** `feat/t16-servidor`
+**Commit:** `feat: servidor de recepción con código de un solo uso`
+**Archivos:** `src/net/servidor.js`, `test/servidor.test.js`, `bin/dsh-bridge.js`, `src/cli/opciones.js`, `src/cli/formato.js`, `TAREAS.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+El equipo que recibe ya se puede quedar escuchando: `dsh-bridge serve` arranca un servidor HTTP sin dependencias que enseña dirección, código de 6 dígitos y caducidad. Al emparejarse entrega un token y desde ahí se pueden listar las conversaciones. El código es de un solo uso, caduca a los 10 minutos, admite 5 intentos y bloquea; se compara en tiempo constante y nunca se devuelve.
+
+### 2. ¿Por qué?
+
+Es la otra mitad del «pongo la IP y se transfiere»: alguien tiene que esperar al otro lado. Y ese alguien está expuesto a su red local, así que el diseño es desconfiado por defecto: escucha solo en `127.0.0.1` salvo que se pida `--red`, y sin el código no se puede ni mirar qué conversaciones hay. El límite de intentos y la caducidad están porque un código de 6 dígitos son un millón de combinaciones: con 5 intentos y 10 minutos, adivinarlo no es viable.
+
+### 3. ¿Dónde verlo en el código?
+
+- `src/net/servidor.js:35-47` — `ipLocal`, la IP que se le da al otro equipo.
+- `src/net/servidor.js:49-52` — `crearCodigo` (6 dígitos, con ceros delante).
+- `src/net/servidor.js:115-150` — `crearServidor`: estado del código, intentos, token y caducidades.
+- `src/net/servidor.js:153-215` — rutas `/estado`, `/emparejar` y `/sesiones` con sus comprobaciones.
+- `src/net/servidor.js:220-300` — `iniciar`/`cerrar` y datos que se enseñan.
+- `bin/dsh-bridge.js:231-286` — `comandoServe`: banner, avisos y `Ctrl+C`.
+- `test/servidor.test.js:48-210` — los 8 tests (puerto 0 y reloj controlado).
+- `src/cli/opciones.js` y `src/cli/formato.js` — `--red`, `--puerto`, `--codigo` y la ayuda.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 134` / `fail 0`**.
+2. Una consola: `node bin/dsh-bridge.js serve --codigo 123456`. Otra (o el navegador): `http://127.0.0.1:8787/estado` → JSON con `emparejado: false` e `intentosRestantes: 5`.
+3. Emparejarse y listar:
+
+   ```powershell
+   $r = Invoke-RestMethod "http://127.0.0.1:8787/emparejar" -Method Post -ContentType "application/json" -Body '{"codigo":"123456"}'
+   Invoke-RestMethod "http://127.0.0.1:8787/sesiones" -Headers @{ Authorization = "Bearer $($r.token)" } | Select-Object -ExpandProperty sesiones | Measure-Object
+   ```
+   Comprobado por el usuario: **Count: 115**. Repetir el primer comando da 401 (código ya usado).
+4. Modo red: `serve --red` y consultar por la IP de la máquina; comprobado en este equipo.
+5. Abre `TAREAS.md:195`: T16 en ✅ y T17 en ⏳.
+
+_(Sin más entradas todavía: la T17 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_

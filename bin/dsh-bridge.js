@@ -26,6 +26,7 @@ import {
 import { leerRegistro, validarRegistro } from "../src/core/registry.js";
 import { attachmentHashes, listSessions } from "../src/core/sessions.js";
 import { decodeLogBuffer } from "../src/core/zstd.js";
+import { crearServidor, ipLocal } from "../src/net/servidor.js";
 import {
   SeleccionError,
   formatearBytes,
@@ -221,6 +222,51 @@ function comandoDoctor(opciones) {
     for (const problema of problemas) mal(problema);
   }
   return problemas.length === 0 ? 0 : 1;
+}
+
+/**
+ * Se queda escuchando para que otro equipo se empareje y envíe una conversación.
+ * El código se enseña una vez, caduca y solo sirve una vez.
+ */
+async function comandoServe(opciones) {
+  const home = resolveHome(opciones["dsh-home"]);
+  const puerto = opciones.puerto === undefined ? 8787 : Number(opciones.puerto);
+  if (!Number.isInteger(puerto) || puerto < 0 || puerto > 65535) throw new CliError(`puerto no válido: ${opciones.puerto}`);
+
+  const host = opciones.red === true ? "0.0.0.0" : "127.0.0.1";
+  const servidor = crearServidor({ home, puerto, host, codigo: opciones.codigo });
+  const puertoReal = await servidor.iniciar();
+  const datos = servidor.datos;
+  const ip = host === "0.0.0.0" ? ipLocal() ?? "127.0.0.1" : "127.0.0.1";
+
+  escribir("");
+  escribir("  dsh-bridge · recibiendo conversaciones");
+  escribir("  " + "─".repeat(52));
+  escribir(`  Dirección : http://${ip}:${puertoReal}`);
+  escribir(`  Código    : ${datos.codigo}   (un solo uso, caduca ${formatearFecha(datos.expira)})`);
+  escribir("");
+  escribir("  En el otro equipo:");
+  escribir(`    dsh-bridge send --ip ${ip} --puerto ${puertoReal}`);
+  escribir("");
+  if (host === "0.0.0.0") {
+    aviso("escuchando en toda la red local: cualquiera que acierte el código podría enviar una conversación");
+    aviso("si Windows pregunta por el firewall, permite solo redes privadas");
+  } else {
+    aviso("solo accesible desde este equipo; usa --red para abrirlo a la red local");
+  }
+  escribir("  Ctrl+C para parar.");
+  escribir("");
+
+  await new Promise((resolver) => {
+    const parar = () => {
+      escribir("");
+      escribir("parando…");
+      servidor.cerrar().then(() => resolver(undefined), () => resolver(undefined));
+    };
+    process.once("SIGINT", parar);
+    process.once("SIGTERM", parar);
+  });
+  return 0;
 }
 
 //#endregion
@@ -442,9 +488,10 @@ async function principal(argv) {
       return comandoImport(posicionales, opciones);
     case "doctor":
       return comandoDoctor(opciones);
+    case "serve":
+      return comandoServe(opciones);
     case "send":
-    case "receive":
-      aviso(`«${comando}» llega en la v0.2 (transferencia por red con código de un solo uso)`);
+      aviso("«send» llega en la próxima tarea (T17): enviar el ZIP cifrado por la red");
       escribir("de momento: exporta un ZIP y llévalo al otro equipo");
       return 2;
     case "menu":
