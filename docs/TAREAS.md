@@ -300,7 +300,7 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 ## Fase 6 — Arreglos que encontró el CI
 
 ### T26 · Endurecimiento: ZIP bomba, DNS rebinding y fuerza bruta
-**Estado:** 👀 Esperando tu OK · **Depende de:** T25 · **Rama propuesta:** `fix/nombre-proyecto` (la misma)
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T25 · **Rama:** `fix/nombre-proyecto` · **Commit:** `fix: nombre del proyecto al importar, topes de ZIP, Host local y código de 8 dígitos`
 **Pregunta del usuario (2026-11-07): «¿el proyecto es seguro contra ataques, inyecciones, etc.?»**
 **Archivos:** `src/core/zip.js`, `src/net/ui.js`, `src/net/servidor.js`, `src/net/cliente.js`, `src/net/cifrado.js`, `bin/dsh-bridge.js`, `src/cli/formato.js`, pruebas de zip/ui/servidor/red/cifrado/descubrir, `CHANGELOG.md`, `README.md`
 
@@ -311,7 +311,7 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] Actualizado lo que decía «6 dígitos»: ayuda, mensajes, interfaz, README y CHANGELOG. Los documentos se han movido a `docs/` y `AGENTS.md` ya apunta ahí
 
 ### T25 · Nombre del proyecto y destinos, como se esperaba
-**Estado:** 👀 Esperando tu OK · **Depende de:** T24 · **Rama propuesta:** `fix/nombre-proyecto`
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T24 · **Rama:** `fix/nombre-proyecto` · **Commit:** `fix: nombre del proyecto al importar, topes de ZIP, Host local y código de 8 dígitos`
 **Petición del usuario (2026-11-07): «creé una carpeta llamada juego, la paso por red y crea la carpeta pero le pone el nombre del chat»; «en el apartado 4, ¿no debería abrir el explorador como en exportar e importar?»**
 **Archivos:** `src/core/import.js`, `bin/dsh-bridge.js`, `test/import.test.js`, `TAREAS.md`, `HISTORIAL.md`
 

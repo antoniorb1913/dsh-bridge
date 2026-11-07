@@ -1,4 +1,4 @@
-# HISTORIAL.md — dsh-bridge
+﻿# HISTORIAL.md — dsh-bridge
 
 Registro cronológico de tareas terminadas. **Se escribe al recibir el «sí» a «¿Todo OK?» (REGLA 1, paso 6), sin excepciones.**
 
@@ -952,7 +952,7 @@ El programa estaba bien; el fallo era de las pruebas, que comparaban texto en ve
 
 ## 2026-11-07 · T25 — El proyecto se llama como su carpeta
 
-**Estado:** 👀 Esperando tu OK
+**Estado:** ✅ Completada
 **Rama:** `fix/nombre-proyecto`
 **Commit:** `fix: el workspace importado se registra con el nombre de su carpeta`
 **Archivos:** `src/core/import.js`, `bin/dsh-bridge.js`, `test/import.test.js`, `TAREAS.md`, `HISTORIAL.md`
@@ -985,7 +985,7 @@ El usuario lo dijo claro: «creo la carpeta y mete el chat, pero le pone el nomb
 
 ## 2026-11-07 · T26 — Endurecimiento: ZIP bomba, DNS rebinding y fuerza bruta
 
-**Estado:** 👀 Esperando tu OK
+**Estado:** ✅ Completada
 **Rama:** `fix/nombre-proyecto` (misma que T25)
 **Commit:** `fix: el workspace importado se registra con el nombre de su carpeta` (con la T25) y `fix: topes de ZIP, Host local y código de 8 dígitos`
 **Archivos:** `src/core/zip.js`, `src/net/ui.js`, `src/net/servidor.js`, `src/net/cliente.js`, `src/net/cifrado.js`, `bin/dsh-bridge.js`, `src/cli/formato.js`, `test/zip.test.js`, `test/ui.test.js`, `test/servidor.test.js`, `test/red.test.js`, `test/cifrado.test.js`, `test/descubrir.test.js`, `CHANGELOG.md`, `README.md`, `docs/TAREAS.md`, `docs/HISTORIAL.md`
