@@ -166,7 +166,7 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] Enlaces internos del README comprobados (los cinco apuntan a ficheros que existen)
 
 ### T14 · CI de GitHub Actions y metadatos del paquete
-**Estado:** 👀 Esperando tu OK · **Depende de:** T13 · **Rama:** `chore/t14-ci` (la misma rama, con el arreglo)
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T13 · **Rama:** `chore/t14-ci` · **Commits:** `chore: CI en Ubuntu y Windows y metadatos del paquete` + `fix: --version y --help funcionan sin DeepSeek Harness instalado`
 **Archivos:** `.github/workflows/ci.yml`, `package.json`, `README.md`, `bin/dsh-bridge.js`, `test/integracion.test.js`
 
 - [x] `ci.yml`: matriz **Ubuntu + Windows × Node 22.15 / 24 / 26**, en push a `main`, en cada PR y a mano (`workflow_dispatch`); `permissions: contents: read`
@@ -176,13 +176,17 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] Comprobado en local lo que hará el CI: `npm pack --dry-run` → **17 ficheros, 38,9 kB** (entran `bin`, `src`, `docs/FORMATO.md`, README, CHANGELOG y LICENSE; **no** entran los tests ni `AGENTS/TAREAS/HISTORIAL`)
 - [x] **El CI se ejecutó de verdad en el PR #17 y encontró un fallo:** los 6 trabajos de pruebas pasaron (Windows y Ubuntu, Node 22.15/24/26), pero el paso `dsh-bridge --version` fallaba en el runner porque el programa buscaba `~/.dsh` **antes** de atender `--help` y `--version`
 - [x] **Corregido:** la ayuda y la versión se atienden sin tocar el disco; el resto de comandos siguen resolviendo `~/.dsh` con su error claro. Test nuevo que lo fija (con un `--dsh-home` inexistente): **126 pruebas, 0 fallos**
+- [x] **CI en verde:** PR #18 (run `2d93d09`) y push a `main` (`3cb9b6e0`) con los **7 trabajos correctos**
 
 ### T15 · Prueba real entre los dos equipos
-**Estado:** ⏳ Pendiente · **Depende de:** T14 · **Rama propuesta:** `test/t15-prueba-real`
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T14 · **Rama:** `test/t15-prueba-real` · **Commit:** `test: prueba real de importación entre los dos equipos`
+**Archivos:** `TAREAS.md`, `HISTORIAL.md` (+ el ZIP generado, que no entra al repo)
 
-- Exportar en el portátil e importar en el sobremesa (y al revés)
-- Comprobar que la app lista y abre la conversación, con imágenes
-- Ajustar lo que falle y dejarlo en `HISTORIAL.md`
+- [x] Exportada **esta misma conversación** con la CLI: `dsh-sesion-pleta-a-deepseek-standard-mode-20261107.zip`, 3,6 MB, 3.474 eventos, 5 adjuntos (`export session-ee2a578c… -o Escritorio`)
+- [x] Instrucciones para el otro PC en `Escritorio\LEEME-PORTATIL.txt` (clonar, `doctor`, cerrar la app, importar, comprobar)
+- [x] **En el portátil:** `git clone`, `doctor`, DSH cerrado e importación con `--workspace`
+- [x] **Comprobado por el usuario: la conversación aparece y se abre en el portátil**
+- [x] **Con esto la v0.1 está completa**: exportar aquí → importar allí → seguir trabajando
 
 ---
 
@@ -216,10 +220,21 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 
 - Tests de servidor y cliente, README de la parte de red, `CHANGELOG.md` 0.2.0
 
+### T21 · Selector nativo de ficheros y carpetas
+**Estado:** ⏳ Pendiente · **Depende de:** T18 · **Rama propuesta:** `feat/t21-selector`
+**Petición del usuario (2026-11-07): «¿al exportar o importar se abrirá el explorador de archivos para elegirlo tú?»**
+
+- Al exportar: diálogo **Guardar como** para el ZIP (nombre propuesto ya relleno)
+- Al importar: diálogo **Abrir** para elegir el `.zip`, y **carpeta** para el workspace destino
+- Sin dependencias: PowerShell (`System.Windows.Forms`) en Windows, `osascript` en macOS, `zenity`/`kdialog` en Linux
+- Degradación limpia: si no hay entorno gráfico, vuelve a pedir la ruta por teclado (lo que hay hoy)
+- En la interfaz web (T18) el navegador ya trae su propio selector: esto es para el menú de terminal
+- Tests: la parte de decisión («hay diálogo / no hay») con dobles; el diálogo real se prueba a mano
+
 ---
 
 ## Notas
 
 - La rama de trabajo actual es `main`; el usuario crea la rama de cada tarea (REGLA 4).
-- Los cuatro borradores (`zstd.js`, `zip.js`, `paths.js`, `sessions.js`) están escritos **sin tests**: por eso sus tareas siguen ⏳ y consisten en revisarlos, completarlos y cubrirlos.
+- **v0.1 cerrada el 2026-11-07** con la T15: conversación exportada en el sobremesa e importada en el portátil, comprobada por el usuario.
 - **2026-11-06** — A petición del usuario se añadió la **REGLA 6** a `AGENTS.md` (revisión obligatoria cuando avisa de que ya está subido a GitHub). Viaja en el mismo commit de T1, que todavía no está subido.

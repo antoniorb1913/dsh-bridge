@@ -547,30 +547,67 @@ El valor de este proyecto no es solo el código: es haber entendido por qué una
 
 **Estado:** ✅ Completada
 **Rama:** `chore/t14-ci`
-**Commit:** `chore: CI en Ubuntu y Windows y metadatos del paquete`
-**Archivos:** `.github/workflows/ci.yml`, `package.json`, `README.md`, `TAREAS.md`, `AGENTS.md`
+**Commits:** `chore: CI en Ubuntu y Windows y metadatos del paquete` · `fix: --version y --help funcionan sin DeepSeek Harness instalado`
+**Archivos:** `.github/workflows/ci.yml`, `package.json`, `README.md`, `bin/dsh-bridge.js`, `test/integracion.test.js`, `TAREAS.md`, `AGENTS.md`
 
 ### 1. ¿Qué he realizado?
 
-Añadí el workflow de GitHub Actions: matriz de **Ubuntu y Windows por Node 22.15, 24 y 26** ejecutando `npm test`, más un trabajo que comprueba que el paquete se puede publicar (`npm pack --dry-run` y `--version`). Revisé los metadatos de `package.json` (engines, bin, scripts, homepage, bugs), quité un `main` que no aportaba y puse la insignia de CI en el README.
+Añadí el workflow de GitHub Actions: matriz de **Ubuntu y Windows por Node 22.15, 24 y 26** ejecutando `npm test`, más un trabajo que comprueba que el paquete se puede publicar (`npm pack --dry-run` y `--version`). Revisé los metadatos de `package.json`, puse la insignia en el README y **corregí el fallo que el propio CI encontró**: `--version` y `--help` exigían tener `~/.dsh` y fallaban en cualquier equipo sin DeepSeek Harness.
 
 ### 2. ¿Por qué?
 
-Los tests solo se estaban ejecutando a mano y en un sistema. Ese es justo el punto ciego por el que se coló el fallo de `path.basename`: funcionaba en Windows y no en Linux. Con la matriz, ese fallo no llega a `main`, y el trabajo de empaquetado evita publicar un paquete sin el `bin` o con ficheros de más. Es la defensa que queda cuando nadie está mirando.
+Los tests solo se estaban ejecutando a mano y en un sistema. Ese es justo el punto ciego por el que se coló el fallo de `path.basename`: funcionaba en Windows y no en Linux. Con la matriz, ese fallo no llega a `main`, y el trabajo de empaquetado evita publicar un paquete sin el `bin` o con ficheros de más.
+
+Y funcionó a la primera: **el CI encontró un fallo real en la primera ejecución** (run #1, PR #17). Los seis trabajos de pruebas pasaron, pero el paso `node bin/dsh-bridge.js --version` del trabajo de empaquetado falló porque `principal()` resolvía `~/.dsh` antes de mirar qué comando se pedía: en un runner vacío no existe y moría el comando más básico. Se arregló atendiendo `help` y `version` antes de tocar el disco, con un test que lo fija.
 
 ### 3. ¿Dónde verlo en el código?
 
 - `.github/workflows/ci.yml:1-24` — disparadores, permisos y matriz.
-- `.github/workflows/ci.yml:25-45` — pasos de `pruebas` (checkout, setup-node, versiones, `npm test`).
-- `.github/workflows/ci.yml:47-63` — trabajo `empaquetado`.
-- `package.json:1-40` — `engines`, `bin`, `scripts` (`test`, `start`, `doctor`), `files`, `homepage`, `bugs`.
+- `.github/workflows/ci.yml:25-45` — pasos de `pruebas`.
+- `.github/workflows/ci.yml:47-63` — trabajo `empaquetado` (el que destapó el fallo).
+- `bin/dsh-bridge.js:419-437` — `help` y `version` se atienden antes de `resolveHome`.
+- `test/integracion.test.js:230-250` — test con un `--dsh-home` inexistente.
+- `package.json:1-40` — `engines`, `bin`, `scripts`, `files`, `homepage`, `bugs`.
 - `README.md:3` — insignia de CI.
 
 ### 4. ¿Cómo comprobar que funciona?
 
-1. En local, lo mismo que hará el CI: `npm pack --dry-run` → **17 ficheros, 38,9 kB**, sin tests.
-2. `node bin/dsh-bridge.js --version` → `dsh-bridge 0.1.0`; `npm test` → 125 y 0 fallos.
-3. **La prueba de verdad es GitHub:** al subir la rama, el PR lanza el workflow. Pestaña *Actions* → `CI` → deben salir verdes los 6 trabajos de la matriz y el de empaquetado. Si algo falla por el YAML, se corrige en `chore/t14-ci` y se vuelve a ejecutar.
-4. Abre `TAREAS.md:168`: T14 en ✅ y T15 en ⏳ (con su nota sobre la validación del YAML).
+1. **En GitHub:** pestaña *Actions* → `CI`. El run del PR #18 (`2d93d09`) y el de `main` (`3cb9b6e0`) salen **verdes con los 7 trabajos**: seis de pruebas y el de empaquetado. La insignia del README tiene que verse en verde.
+2. En local: `npm pack --dry-run` → **17 ficheros, 38,9 kB**, sin tests; `npm test` → **126 pruebas, 0 fallos**.
+3. El fallo que encontró el CI, ya corregido: `node bin/dsh-bridge.js --version --dsh-home "C:\no\existe"` → `dsh-bridge 0.1.0` y código 0; en cambio `list` con esa misma carpeta falla con mensaje claro.
+4. Abre `TAREAS.md:168`: T14 en ✅ y T15 en ⏳.
 
-_(Sin más entradas todavía: la T15 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
+---
+
+## 2026-11-07 · T15 — Prueba real entre los dos equipos
+
+**Estado:** ✅ Completada
+**Rama:** `test/t15-prueba-real`
+**Commit:** `test: prueba real de importación entre los dos equipos`
+**Archivos:** `TAREAS.md`, `HISTORIAL.md` (el ZIP generado no entra al repositorio)
+
+### 1. ¿Qué he realizado?
+
+Exporté esta misma conversación con la herramienta (`dsh-bridge export … -o Escritorio`): ZIP de 3,6 MB con **3.474 eventos y 5 imágenes**. Escribí `LEEME-PORTATIL.txt` con los pasos para el otro equipo y el usuario hizo la otra mitad: clonar, `doctor`, cerrar DeepSeek Harness e importar en el portátil. La conversación apareció y se abre.
+
+### 2. ¿Por qué?
+
+Todo lo anterior estaba probado con casas falsas y en el mismo equipo. La prueba que faltaba era la de verdad: dos máquinas distintas, dos copias de DeepSeek Harness y una persona siguiendo instrucciones sin mí delante. Es la única forma de saber si el paso a paso del README sirve o solo funciona en mi cabeza.
+
+### 3. ¿Dónde verlo en el código?
+
+- `bin/dsh-bridge.js:94-113` — `comandoExport`, el que generó el ZIP.
+- `bin/dsh-bridge.js:115-156` — `comandoImport`, el que se usó en el portátil.
+- `src/core/pack.js:89-212` — construcción del bundle y escritura del ZIP.
+- `src/core/import.js:157-269` — validación, reescritura de ruta, adjuntos y registro.
+- `README.md:130-160` — los pasos que se siguieron (sección «Uso» y avisos).
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. En el sobremesa: Escritorio → `dsh-sesion-pleta-a-deepseek-standard-mode-20261107.zip` (3,6 MB) y `LEEME-PORTATIL.txt`.
+2. Repetir la exportación: `node bin/dsh-bridge.js export session-ee2a578c-9407-4827-a6af-36a5e1df771c -o "%USERPROFILE%\Desktop"` → debe dar un ZIP de tamaño parecido.
+3. En el portátil, con DeepSeek Harness cerrado: `node bin/dsh-bridge.js import <zip> --workspace <carpeta>` → «✔ importada» con 3.474 eventos y 5 adjuntos.
+4. Abrir la app allí: la conversación aparece en el workspace elegido y se abre con sus imágenes (comprobado por el usuario).
+5. Abre `TAREAS.md:181`: T15 en ✅. **La v0.1 está completa.**
+
+_(Sin más entradas todavía: la T16 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
