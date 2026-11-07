@@ -206,8 +206,8 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [ ] La recepción del bundle cifrado llega en la T17 (`send`)
 
 ### T17 · Envío (`send`) con cifrado
-**Estado:** 👀 Esperando tu OK · **Depende de:** T16 · **Rama propuesta:** `feat/t17-envio`
-**Archivos:** `src/net/cifrado.js`, `src/net/cliente.js`, `src/net/servidor.js`, `bin/dsh-bridge.js`, `test/cifrado.test.js`, `test/red.test.js`
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T16 · **Rama:** `feat/t17-envio` · **Commit:** `feat: envío cifrado entre equipos con recepción e importación`
+**Archivos:** `src/net/cifrado.js`, `src/net/cliente.js`, `src/net/servidor.js`, `bin/dsh-bridge.js`, `src/cli/opciones.js`, `src/cli/formato.js`, `test/cifrado.test.js`, `test/red.test.js`
 
 - [x] **Cifrado con AES-256-GCM** y clave derivada del código con `scrypt` + `salt` aleatorio por envío: el código **no viaja** en ninguna petición
 - [x] Cifrado y descifrado **en streaming**, sin cargar 300 MB en memoria; un byte cambiado invalida el paquete (queda cubierto por el tag)
