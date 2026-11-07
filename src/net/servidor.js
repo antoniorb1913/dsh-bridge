@@ -234,7 +234,7 @@ export function crearServidor(opciones) {
           emparejado: estado.emparejado,
           bloqueado: estado.bloqueado,
           intentosRestantes: Math.max(0, intentosMax - estado.intentos),
-          aceptaBundles: typeof workspace === "string",
+          aceptaBundles: typeof workspace === "string" || typeof opciones.elegirDestino === "function",
           expira: new Date(estado.codigoExpira).toISOString()
         });
         return;
@@ -298,7 +298,10 @@ export function crearServidor(opciones) {
           req.resume();
           return;
         }
-        if (typeof workspace !== "string" || workspace === "") {
+
+        // Hace falta alguna forma de decidir el destino: fija (`--workspace`) o
+        // resolviéndolo al vuelo con el bundle ya descifrado.
+        if (typeof workspace !== "string" && typeof opciones.elegirDestino !== "function") {
           responder(res, 400, { error: "sin-destino", detalle: "arranca `serve` con --workspace <carpeta> para poder recibir" });
           req.resume();
           return;
@@ -324,9 +327,27 @@ export function crearServidor(opciones) {
         try {
           await recibirArchivo(req, cifrado, maxBytes);
           await descifrarArchivo(cifrado, zip, estado.codigo);
+
+          // Con el bundle ya en claro se decide el destino: manda lo que diga el
+          // resolutor (diálogo, carpeta del emisor…) y, si no hay, la fija.
+          let destino = workspace;
+          if (typeof opciones.elegirDestino === "function") {
+            try {
+              const resuelto = await opciones.elegirDestino(zip);
+              if (typeof resuelto === "string" && resuelto !== "") destino = resuelto;
+            } catch {
+              // Si el resolutor falla se intenta con la carpeta fija.
+            }
+          }
+          if (typeof destino !== "string" || destino === "") {
+            responder(res, 409, { error: "sin-destino", detalle: "no se pudo decidir dónde guardar la conversación en el equipo que recibe" });
+            return;
+          }
+          fs.mkdirSync(destino, { recursive: true });
+
           const resultado = importarBundle(zip, {
             home,
-            workspace,
+            workspace: destino,
             tiposConocidos: opciones.tiposConocidos,
             appAbierta: false,
             forzar: opciones.forzar === true

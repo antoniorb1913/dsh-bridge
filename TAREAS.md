@@ -270,7 +270,7 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] **Comprobado por el usuario:** el diálogo se abre de verdad, elige carpeta y el ZIP se guarda donde toca
 
 ### T22 · Lanzadores de doble clic
-**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T21 · **Rama:** `feat/t22-lanzadores` · **Commit:** `feat: lanzadores de doble clic y aviso al recibir`
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T21 · **Rama:** `feat/t22-lanzadores` · **Commit:** `feat: lanzadores, destino automático y actualización al recibir`
 **Petición del usuario (2026-11-07): «no se puede hacer un ejecutable de terminal para que me abra el receptor? y para el emisor también, sin tener que lanzar comando»**
 **Archivos:** `recibir.cmd`, `enviar.cmd`, `dsh-bridge.cmd`, `bin/lanzador.js`, `test/lanzadores.test.js`
 
@@ -283,6 +283,17 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] **Puerto ocupado:** si ya hay otro `serve` de este programa en el 8787, el lanzador lo detecta, avisa («mira esa ventana: el código está ahí») y se cierra sin abrir un duplicado; si quien ocupa el puerto es otro programa, prueba el 8788, 8789…
 - [x] **Carpeta inválida:** si el nombre no vale (`<`, `>`, `:`…), avisa del motivo y sigue con `Documents\recibidas` en vez de rendirse
 - [x] **Aviso al recibir** (lo que faltaba): el receptor imprime «✔ recibida «título» · eventos · adjuntos · dónde queda»
+
+### T23 · Destino automático y actualización al recibir
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T22 · **Rama:** `feat/t22-lanzadores` (misma rama) · **Commit:** `feat: lanzadores, destino automático y actualización al recibir`
+**Petición del usuario (2026-11-07): «que se guarde en la carpeta que tiene el emisor; si el receptor ya la tiene, que revise si el chat ya existe y de ser así que borre el que tiene y ponga este; si no tiene la carpeta, que la cree»**
+**Archivos:** `bin/dsh-bridge.js`, `src/net/servidor.js`, `test/red.test.js`, `README.md`, `TAREAS.md`, `HISTORIAL.md`
+
+- [x] **Sin preguntas:** al recibir se decide solo. Primero mira si esa conversación **ya está** en el equipo (por su id) → la actualiza **donde está**; si no, usa la **ruta del proyecto del emisor** si existe en este equipo; y si no existe, la **crea** con ese nombre en `Documents\recibidas`
+- [x] **Nunca duplicada:** al reemplazar se guarda copia del histórico anterior (`.bak-AAAAMMDDhhmmss`), los adjuntos se deduplican por hash (0 copiados si ya estaban) y la ficha del workspace no se duplica
+- [x] `--preguntar` sigue disponible para quien quiera elegir la carpeta a mano (con «Nueva carpeta»); por defecto no molesta
+- [x] Probado de verdad en dos envíos seguidos: el primero creó el destino (`D:\...\JARDIN\bar`), el segundo dijo **«ya la tenías: se actualiza»**, dejó `session.v4.jsonl.zstd.bak-20261107140857` y no copió adjuntos repetidos
+- [x] 184 pruebas, 0 fallos (los 3 tests nuevos cubren: carpeta elegida, cancelar y carpeta espejo)
 
 ---
 

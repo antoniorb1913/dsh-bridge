@@ -846,7 +846,7 @@ Era la petición literal del usuario: «¿al exportar o importar se abrirá el e
 
 **Estado:** ✅ Completada
 **Rama:** `feat/t22-lanzadores`
-**Commit:** `feat: lanzadores de doble clic y aviso al recibir`
+**Commit:** `feat: lanzadores, destino automático y actualización al recibir`
 **Archivos:** `recibir.cmd`, `enviar.cmd`, `dsh-bridge.cmd`, `bin/lanzador.js`, `bin/dsh-bridge.js`, `src/net/servidor.js`, `src/core/import.js`, `test/lanzadores.test.js`, `README.md`, `TAREAS.md`, `AGENTS.md`
 
 ### 1. ¿Qué he realizado?
@@ -882,5 +882,39 @@ Tres fallos por el camino, todos con test o comprobación después:
 4. `dsh-bridge.cmd --version` → `dsh-bridge 0.2.0`.
 5. Enviar una conversación: el receptor imprime «✔ recibida «…» · 2.530 eventos · 14 adjuntos».
 6. Abre `TAREAS.md:271`: T22 en ✅.
+
+---
+
+## 2026-11-07 · T23 — Destino automático y actualización al recibir
+
+**Estado:** ✅ Completada
+**Rama:** `feat/t22-lanzadores` (misma rama que T22)
+**Commit:** `feat: lanzadores, destino automático y actualización al recibir`
+**Archivos:** `bin/dsh-bridge.js`, `src/net/servidor.js`, `test/red.test.js`, `README.md`, `TAREAS.md`, `HISTORIAL.md`
+
+### 1. ¿Qué he realizado?
+
+Recibir por red ya no pregunta nada ni amontona todo en una carpeta: cada conversación se coloca **donde corresponde**, siguiendo tres pasos en este orden: si esa misma conversación ya está en el equipo, se **actualiza en su sitio**; si no, se usa la **carpeta del proyecto del emisor** (la misma ruta, si existe aquí); y si esa carpeta no existe, se **crea** con su nombre dentro de `Documents\recibidas`.
+
+### 2. ¿Por qué?
+
+El usuario lo pidió tal cual: «que se guarde en la carpeta que tiene el emisor… y si ya existe el chat, que borre el que tiene y ponga este, que estará actualizado». No se puede actualizar un histórico en el sitio —solo crece— así que lo correcto es reemplazarlo, y con copia del anterior por si el que llega viene incompleto. Preguntar una carpeta por cada envío, además, convertía una tarea de dos clics en un formulario.
+
+### 3. ¿Dónde verlo en el código?
+
+- `bin/dsh-bridge.js:301-370` — `resolverDestino`: los tres pasos, con mensajes de qué decidió.
+- `bin/dsh-bridge.js:353-375` — `alRecibir`: distingue «recibida» de «actualizada» y enseña la copia.
+- `bin/dsh-bridge.js:377` — `forzar: true`: lo que llega manda (con `.bak`).
+- `src/net/servidor.js:302-345` — el servidor pide el destino **después de descifrar**, cuando ya puede leer el proyecto del emisor.
+- `test/red.test.js` — carpeta elegida, cancelar y carpeta espejo.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 184` / `fail 0`**.
+2. Dos envíos seguidos de la misma conversación (receptor con `--dsh-home` temporal):
+   - primero: `destino: D:\...\JARDIN\bar` y «✔ recibida»;
+   - segundo: `destino: … (ya la tenías: se actualiza)` y «✔ actualizada», con `…zstd.bak-20261107140857` al lado y **0 adjuntos copiados** (14 ya estaban).
+3. En el receptor: `node bin/dsh-bridge.js list` → la conversación aparece **una sola vez**.
+4. Abre `TAREAS.md:272`: T23 en 👀 (pasa a ✅ con tu «sí»).
 
 _(Fin del historial.)_
