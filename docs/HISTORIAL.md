@@ -981,4 +981,36 @@ El usuario lo dijo claro: «creo la carpeta y mete el chat, pero le pone el nomb
 4. Menú → opción 4: ya no pregunta ruta; sale el banner de recepción.
 5. Abre `TAREAS.md`: T25 en 👀 hasta tu «sí».
 
+---
+
+## 2026-11-07 · T26 — Endurecimiento: ZIP bomba, DNS rebinding y fuerza bruta
+
+**Estado:** 👀 Esperando tu OK
+**Rama:** `fix/nombre-proyecto` (misma que T25)
+**Commit:** `fix: el workspace importado se registra con el nombre de su carpeta` (con la T25) y `fix: topes de ZIP, Host local y código de 8 dígitos`
+**Archivos:** `src/core/zip.js`, `src/net/ui.js`, `src/net/servidor.js`, `src/net/cliente.js`, `src/net/cifrado.js`, `bin/dsh-bridge.js`, `src/cli/formato.js`, `test/zip.test.js`, `test/ui.test.js`, `test/servidor.test.js`, `test/red.test.js`, `test/cifrado.test.js`, `test/descubrir.test.js`, `CHANGELOG.md`, `README.md`, `docs/TAREAS.md`, `docs/HISTORIAL.md`
+
+### 1. ¿Qué he realizado?
+
+Revisión de seguridad completa y tres cierres: **tope de descompresión** al leer ZIP (por entrada y total, comprobado antes de inflar y con `maxOutputLength`), **validación de la cabecera `Host`** en la interfaz web (403 si no es `127.0.0.1`, `localhost` o `[::1]`) y **código de 8 dígitos** con `scrypt` más caro (N=2^15). Medido: la fuerza bruta offline pasa de **6,8 horas** a **57 días por núcleo**.
+
+### 2. ¿Por qué?
+
+El usuario preguntó si el proyecto es seguro. Lo que estaba bien, estaba bien (sin `eval`, sin `shell: true`, Zip Slip bloqueado, CRC y sha256 verificados, token y código de un solo uso), pero había tres huecos reales: un ZIP bomba podía tumbar el proceso, un dominio con DNS rebinding podía leer la API local, y un código de 6 dígitos con scrypt barato cae en horas si alguien captura el paquete en la red.
+
+### 3. ¿Dónde verlo en el código?
+
+- `src/core/zip.js:200-230` — topes antes de inflar y `maxOutputLength`.
+- `src/net/ui.js:497-510` — `hostPermitido` y el 403.
+- `src/net/cifrado.js:38-48` — scrypt N=2^15 con `maxmem`.
+- `src/net/servidor.js:54-56` — `crearCodigo` de 8 dígitos.
+- `test/zip.test.js`, `test/ui.test.js` — las tres pruebas nuevas.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 188` / `fail 0`**.
+2. `serve` → el código que sale tiene **8 dígitos**; `send --codigo 123456` responde «el código son 8 dígitos».
+3. Envío real con código de 8 dígitos: 2.530 eventos y 14 adjuntos, correcto.
+4. `curl -H "Host: evil.com" http://127.0.0.1:8790/` → 403.
+
 _(Fin del historial.)_

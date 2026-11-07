@@ -155,9 +155,15 @@ export function createZip(entries) {
  * @param {Buffer} buffer
  * @returns {Map<string, Buffer>}
  */
-export function readZip(buffer) {
+export function readZip(buffer, opciones = {}) {
   if (!Buffer.isBuffer(buffer)) throw new ZipError("readZip espera un Buffer");
   if (buffer.length < 22) throw new ZipError(`el archivo es demasiado pequeño para ser un ZIP (${buffer.length} bytes)`);
+
+  // Topes de descompresión (defensa contra ZIP bomba). Un log real no pasa de
+  // decenas de MB; las fotos, de unos pocos MB cada una.
+  const limiteEntrada = opciones.limiteEntrada ?? 1024 * 1024 * 1024;
+  const limiteTotal = opciones.limiteTotal ?? 2 * 1024 * 1024 * 1024;
+  let totalDescomprimido = 0;
 
   // El índice final puede llevar hasta 64 KB de comentario detrás.
   let eocd = -1;
@@ -206,10 +212,28 @@ export function readZip(buffer) {
     if (dataStart + compressedSize > buffer.length) throw new ZipError(`datos truncados en ${name}`);
     const raw = buffer.subarray(dataStart, dataStart + compressedSize);
 
+    // Tope de descompresión **antes** de inflar: un ZIP de 1 MB puede declarar
+    // (y contener) gigabytes de ceros y tumbar el proceso. Se comprueba lo
+    // declarado y, después, lo que realmente ha salido.
+    if (uncompressedSize > limiteEntrada) {
+      throw new ZipError(
+        `la entrada ${name} declara ${Math.round(uncompressedSize / (1024 * 1024))} MB y el tope es ${Math.round(limiteEntrada / (1024 * 1024))} MB`
+      );
+    }
+    totalDescomprimido += uncompressedSize;
+    if (totalDescomprimido > limiteTotal) {
+      throw new ZipError(`el ZIP descomprimido supera el tope de ${Math.round(limiteTotal / (1024 * 1024))} MB`);
+    }
+
     let data;
     if (method === 0) data = Buffer.from(raw);
-    else if (method === 8) data = zlib.inflateRawSync(raw);
-    else throw new ZipError(`método de compresión no soportado (${method}) en ${name}`);
+    else if (method === 8) {
+      try {
+        data = zlib.inflateRawSync(raw, { maxOutputLength: limiteEntrada });
+      } catch (error) {
+        throw new ZipError(`no se pudo descomprimir ${name}: ${error.message}`, { cause: error });
+      }
+    } else throw new ZipError(`método de compresión no soportado (${method}) en ${name}`);
 
     if (data.length !== uncompressedSize) throw new ZipError(`tamaño inesperado en ${name}`);
     if (crc32(data) !== crc) throw new ZipError(`CRC incorrecto en ${name}: el ZIP está dañado`);

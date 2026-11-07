@@ -299,6 +299,17 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 
 ## Fase 6 — Arreglos que encontró el CI
 
+### T26 · Endurecimiento: ZIP bomba, DNS rebinding y fuerza bruta
+**Estado:** 👀 Esperando tu OK · **Depende de:** T25 · **Rama propuesta:** `fix/nombre-proyecto` (la misma)
+**Pregunta del usuario (2026-11-07): «¿el proyecto es seguro contra ataques, inyecciones, etc.?»**
+**Archivos:** `src/core/zip.js`, `src/net/ui.js`, `src/net/servidor.js`, `src/net/cliente.js`, `src/net/cifrado.js`, `bin/dsh-bridge.js`, `src/cli/formato.js`, pruebas de zip/ui/servidor/red/cifrado/descubrir, `CHANGELOG.md`, `README.md`
+
+- [x] **Bomba de descompresión:** tope por entrada (1 GB) y total (2 GB), comprobado **antes** de inflar y con `maxOutputLength` al inflar. Un ZIP de 1 MB ya no puede pedir 4 GB de memoria
+- [x] **DNS rebinding:** la interfaz web responde **403** si la cabecera `Host` no es `127.0.0.1`, `localhost` o `[::1]`. Un dominio ajeno ya no puede reapuntarse a tu localhost y leer la API
+- [x] **Fuerza bruta offline del código:** de 6 a **8 dígitos** (×100 combinaciones) y `scrypt` de N=2^14 a **2^15** (×2 coste). Medido: de **6,8 horas** a **57 días por núcleo** para probarlas todas
+- [x] 188 pruebas (3 nuevas: Host ajeno, bomba declarada y bomba real al inflar) y envío real con código de 8 dígitos comprobado
+- [x] Actualizado lo que decía «6 dígitos»: ayuda, mensajes, interfaz, README y CHANGELOG. Los documentos se han movido a `docs/` y `AGENTS.md` ya apunta ahí
+
 ### T25 · Nombre del proyecto y destinos, como se esperaba
 **Estado:** 👀 Esperando tu OK · **Depende de:** T24 · **Rama propuesta:** `fix/nombre-proyecto`
 **Petición del usuario (2026-11-07): «creé una carpeta llamada juego, la paso por red y crea la carpeta pero le pone el nombre del chat»; «en el apartado 4, ¿no debería abrir el explorador como en exportar e importar?»**

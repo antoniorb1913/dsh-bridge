@@ -11,7 +11,7 @@ import fs from "node:fs";
 import { ServidorError, crearCodigo, crearServidor, ipLocal } from "../src/net/servidor.js";
 import { crearCasaFalsa } from "./ayudas/entorno.js";
 
-const CODIGO = "123456";
+const CODIGO = "12345678";
 
 /** Arranca un servidor con reloj controlado y devuelve todo lo necesario. */
 async function montar(opciones = {}) {
@@ -197,11 +197,11 @@ test("rutas y cuerpos raros se rechazan con 404 y 413", async () => {
 test("valida sus parámetros de arranque", async () => {
   assert.throws(() => crearServidor({ home: "" }), ServidorError);
   assert.throws(() => crearServidor({ home: "x", puerto: 70000 }), ServidorError);
-  assert.throws(() => crearServidor({ home: "x", codigo: "12345" }), ServidorError);
+  assert.throws(() => crearServidor({ home: "x", codigo: "1234567" }), ServidorError);
   assert.throws(() => crearServidor({ home: "x", codigo: "abcdef" }), ServidorError);
 
   const codigo = crearCodigo();
-  assert.match(codigo, /^\d{6}$/);
+  assert.match(codigo, /^\d{8}$/);
 
   const ip = ipLocal();
   assert.ok(ip === undefined || /^\d+\.\d+\.\d+\.\d+$/.test(ip));

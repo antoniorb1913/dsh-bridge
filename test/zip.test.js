@@ -169,6 +169,27 @@ test("el CRC-32 coincide con el valor de referencia", () => {
   assert.equal(crc32(Buffer.from("123456789")), 0xcbf43926);
 });
 
+test("rechaza una bomba de descompresión por el tamaño declarado", () => {
+  const entradas = [{ name: "log.bin", data: Buffer.alloc(64, 7) }];
+  const zip = zipConDeflate(entradas);
+  // Se miente en el índice central: la entrada dice pesar 3 GB.
+  const central = zip.indexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02]));
+  assert.ok(central > 0, "debe haber índice central");
+  zip.writeUInt32LE(3 * 1024 * 1024 * 1024, central + 24);
+
+  assert.throws(() => readZip(zip), /declara .*MB y el tope es/);
+});
+
+test("el tope también se aplica a lo que realmente sale al inflar", () => {
+  // Deflate de 10 MB de ceros: comprime a unos pocos KB, pero se declara poco
+  // para colarse por la comprobación previa; el maxOutputLength lo corta.
+  const datos = Buffer.alloc(10 * 1024 * 1024, 0);
+  const zip = zipConDeflate([{ name: "gordo.bin", data: datos }]);
+  const central = zip.indexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02]));
+  zip.writeUInt32LE(1024, central + 24); // declara 1 KB (mentira)
+  assert.throws(() => readZip(zip, { limiteEntrada: 64 * 1024 }), ZipError);
+});
+
 test("valida los nombres de entrada", () => {
   assert.doesNotThrow(() => validarNombreEntrada("session/session.v4.jsonl.zstd"));
   assert.throws(() => validarNombreEntrada("a/../b"), ZipError);

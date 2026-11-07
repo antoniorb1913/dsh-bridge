@@ -78,7 +78,8 @@ dsh-bridge/
 │  ├─ ayudas/entorno.js       monta un almacén de mentira completo (3 conversaciones)  [T12 ✔]
 │  └─ integracion.test.js     ciclo export→import y la CLI lanzada de verdad           [T12 ✔]
 ├─ docs/FORMATO.md            el formato v4 por dentro: log, registro, rutas     [T13 ✔]
-├─ AGENTS.md · TAREAS.md · HISTORIAL.md
+├─ AGENTS.md
+├─ docs/ · docs/TAREAS.md (tablero) · HISTORIAL.md (por qué de cada tarea) · FORMATO.md
 ├─ README.md (ES + EN) · CHANGELOG.md · LICENSE (MIT)                            [T13 ✔]
 └─ .github/workflows/ci.yml   Ubuntu+Windows × Node 22.15/24/26 y empaquetado   [T14 ✔]
 ```
@@ -93,8 +94,8 @@ dsh-bridge/
 
 Cada tarea, una vuelta completa:
 
-1. **Leer** este `AGENTS.md` y `TAREAS.md`. Elegir la siguiente tarea pendiente **por orden**. Si conviene cambiar el orden, **justificarlo** al usuario antes de empezar.
-2. Marcar la tarea como **🔧 En curso** en `TAREAS.md`.
+1. **Leer** este `AGENTS.md` y `docs/TAREAS.md`. Elegir la siguiente tarea pendiente **por orden**. Si conviene cambiar el orden, **justificarlo** al usuario antes de empezar.
+2. Marcar la tarea como **🔧 En curso** en `docs/TAREAS.md`.
 3. **Implementar solo esa tarea.** Prohibido colar cambios de otras tareas en el mismo trabajo.
 4. Informar al usuario con:
    - qué se ha hecho,
@@ -104,24 +105,24 @@ Cada tarea, una vuelta completa:
 5. **Parar y esperar.** No se avanza a la siguiente tarea bajo ningún concepto.
 6. Cuando el usuario responde **«sí»**:
    - comprobar que todo está bien subido e informar de lo que falte (ver **REGLA 5**),
-   - marcar **✅ Completada** en `TAREAS.md`,
-   - añadir la entrada correspondiente en `HISTORIAL.md`,
+   - marcar **✅ Completada** en `docs/TAREAS.md`,
+   - añadir la entrada correspondiente en `docs/HISTORIAL.md`,
    - indicar qué subir a GitHub (rama propuesta, mensaje de commit y archivos) y cuándo hacerlo.
 7. Si el usuario dice que algo falla: volver al paso 3, corregir y repetir el paso 4. La tarea **no** se marca ✅.
 
-**Estados posibles en `TAREAS.md`:** ⏳ Pendiente · 🔧 En curso · 👀 Esperando tu OK · ✅ Completada · ⛔ Bloqueada.
+**Estados posibles en `docs/TAREAS.md`:** ⏳ Pendiente · 🔧 En curso · 👀 Esperando tu OK · ✅ Completada · ⛔ Bloqueada.
 
 > Al terminar de implementar (paso 4) la tarea queda en **👀 Esperando tu OK**, no en ✅.
 
 ### REGLA 2 — Documentación
 
-**`TAREAS.md`**
+**`docs/TAREAS.md`**
 - Lista viva de tareas, agrupadas por fases, con **dependencias explícitas**.
 - **Solo una** tarea en 🔧 En curso a la vez.
 - Una tarea pasa a ✅ **únicamente** con el «sí» del usuario.
 
-**`HISTORIAL.md` — registro obligatorio**
-Al terminar una tarea y recibir el «sí», se registra en `HISTORIAL.md`. **Sin excepciones.** Cada entrada lleva los 4 puntos:
+**`docs/HISTORIAL.md` — registro obligatorio**
+Al terminar una tarea y recibir el «sí», se registra en `docs/HISTORIAL.md`. **Sin excepciones.** Cada entrada lleva los 4 puntos:
 
 1. **¿Qué he realizado?** — una o dos frases, sin jerga innecesaria.
 2. **¿Por qué?** — el problema que resolvía o el beneficio.
@@ -214,7 +215,7 @@ Cada vez que el usuario responda **«sí»** a «¿Todo OK?», el agente comprue
 3. **Cambios sin comitear**: fichero rastreado con fecha de modificación posterior a `.git/index`.
 4. **Commits sin subir**: si la rama local apunta a un commit que `origin/` no tiene, falta `git push`.
 5. **PR y merge**: si la rama de la tarea está en `origin` y si `main` ya la ha incorporado; y si `main` local apunta al mismo commit que `origin/main`.
-6. **Registro incluido**: que `TAREAS.md` (✅) y `HISTORIAL.md` (entrada con los 4 puntos) formen parte de **lo subido**, no solo del disco.
+6. **Registro incluido**: que `docs/TAREAS.md` (✅) y `docs/HISTORIAL.md` (entrada con los 4 puntos) formen parte de **lo subido**, no solo del disco.
 
 Se informa con esta tabla:
 
@@ -239,7 +240,7 @@ Comprobaciones, en este orden:
 1. **Rama correcta**: `HEAD` apunta a la rama de la tarea (`tipo/tn-...`), no a `main`.
 2. **Rama en `origin`**: existe `refs/remotes/origin/<rama>` (o aparece en `packed-refs`) y apunta **al mismo commit** que la rama local.
 3. **Commit con los archivos de la tarea**: el árbol del commit contiene todos los archivos del trabajo y no queda ninguno de la tarea sin rastrear en disco.
-4. **Tablero e historial dentro del commit**: `TAREAS.md` con la tarea en ✅ y `HISTORIAL.md` con su entrada, **en el commit**, no solo en el disco.
+4. **Tablero e historial dentro del commit**: `docs/TAREAS.md` con la tarea en ✅ y `docs/HISTORIAL.md` con su entrada, **en el commit**, no solo en el disco.
 5. **`.gitignore` no esconde nada necesario**: si un archivo del proyecto aparece ignorado (por ejemplo `src/` o un fixture `.zip` de test), avisar; `git add -f` solo si es intencionado.
 6. **PR y merge**: si el PR existe y si `main` en `origin` ya incluye la rama; y `main` local al día con `origin/main`.
 7. **Nada sensible subido**: ni conversaciones de `~/.dsh`, ni `*.zip` de sesiones, ni credenciales, ni `.env`, ni rutas privadas. Si aparece algo así es **⛔ bloqueante**: se dice lo primero y cómo quitarlo (`git rm --cached`); si ya está en el historial, avisar de que hay que reescribirlo o rotar lo expuesto.
@@ -273,7 +274,7 @@ Reglas de la respuesta:
 - **Ramas:** `tipo/tn-descripcion-corta` (ej. `feat/t9-export-bundle`), PR siempre a `main`.
 - **Commits:** Conventional Commits, en español y en imperativo (`feat: añade exportación a ZIP`).
 - **Idioma:** documentación, mensajes de la CLI y comentarios en español; nombres de ficheros y de variables en inglés cuando son términos técnicos del formato (`cwd`, `sha256`, `sessionIds`).
-- **Tareas:** un identificador `Tn` por tarea, el mismo en `TAREAS.md`, en la rama y en `HISTORIAL.md`.
+- **Tareas:** un identificador `Tn` por tarea, el mismo en `docs/TAREAS.md`, en la rama y en `docs/HISTORIAL.md`.
 - **Nombres de la CLI:** verbos en inglés (`list`, `export`, `import`, `doctor`), salida por pantalla en español.
 
 ---

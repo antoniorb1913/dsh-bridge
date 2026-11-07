@@ -64,7 +64,7 @@ function peticionJson({ ip, puerto, ruta, metodo = "GET", cuerpo, token, timeout
  * @returns {Promise<string>} token
  */
 export async function emparejar({ ip, puerto, codigo }) {
-  if (typeof codigo !== "string" || !/^\d{6}$/.test(codigo)) throw new RedError("el código son 6 dígitos");
+  if (typeof codigo !== "string" || !/^\d{8}$/.test(codigo)) throw new RedError("el código son 8 dígitos");
   const { codigo: estado, datos } = await peticionJson({ ip, puerto, ruta: "/emparejar", metodo: "POST", cuerpo: { codigo } });
   if (estado === 200 && typeof datos.token === "string") return datos.token;
   if (estado === 401) throw new RedError(`código rechazado (quedan ${datos.intentosRestantes ?? 0} intentos)`);

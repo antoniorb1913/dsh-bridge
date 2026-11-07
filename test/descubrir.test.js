@@ -103,7 +103,7 @@ test("descubrir, encontrar y enviar: el ciclo completo", async () => {
   const destino = carpetaTemporal("dsh-bridge-descubre-");
   const workspace = path.join(destino, "proyecto");
   fs.mkdirSync(workspace, { recursive: true });
-  const servidor = crearServidor({ home: destino, puerto: 0, host: "127.0.0.1", codigo: "445566", workspace, tiposConocidos: TIPOS_CONOCIDOS_020_RC2 });
+  const servidor = crearServidor({ home: destino, puerto: 0, host: "127.0.0.1", codigo: "44556612", workspace, tiposConocidos: TIPOS_CONOCIDOS_020_RC2 });
   const puertoServidor = await servidor.iniciar();
   const respondedor = crearRespondedor({
     puerto: 0,
@@ -125,7 +125,7 @@ test("descubrir, encontrar y enviar: el ciclo completo", async () => {
       sesiones: [casa.sesiones.texto],
       ip: encontrados[0].ip,
       puerto: encontrados[0].puerto,
-      codigo: "445566",
+      codigo: "44556612",
       tiposConocidos: TIPOS_CONOCIDOS_020_RC2
     });
     assert.equal(listSessions(destino).length, 1);

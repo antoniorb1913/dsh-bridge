@@ -1,7 +1,7 @@
 {
   "name": "dsh-bridge",
   "version": "0.2.0",
-  "description": "Exporta e importa conversaciones de DeepSeek Harness entre equipos: ZIP portable, menú y las tres piezas que la app no hace sola (registro, ruta y compatibilidad de eventos).",
+  "description": "Exporta, importa y transfiere conversaciones de DeepSeek Harness entre equipos: ZIP portable o red local cifrada, sin dependencias.",
   "keywords": [
     "deepseek-harness",
     "dsh",
@@ -9,8 +9,12 @@
     "migration",
     "export",
     "import",
+    "transfer",
     "zstd",
-    "cli"
+    "cli",
+    "lan",
+    "aes-256-gcm",
+    "zero-dependencies"
   ],
   "license": "MIT",
   "type": "module",

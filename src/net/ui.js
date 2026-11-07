@@ -54,7 +54,7 @@ const PAGINA = `<!doctype html>
     <div class="fila">
       <label>IP del otro equipo <input id="ip" placeholder="192.168.1.50" autocomplete="off"></label>
       <label>Puerto <input id="puerto" value="8787" size="6"></label>
-      <label>Código <input id="codigo" placeholder="482913" size="8" inputmode="numeric"></label>
+      <label>Código <input id="codigo" placeholder="48291374" size="10" inputmode="numeric"></label>
     </div>
     <div class="acciones">
       <button id="buscar" type="button" class="secundario">Buscar en la red</button>
@@ -486,6 +486,17 @@ function leerJson(req) {  return new Promise((resolver, rechazar) => {
 }
 
 /**
+ * ¿La petición viene dirigida a este equipo por su nombre local?
+ * Corta el DNS rebinding: el `Host` tiene que ser 127.0.0.1, localhost o [::1].
+ */
+function hostPermitido(cabecera) {
+  if (typeof cabecera !== "string" || cabecera === "") return true; // HTTP/1.0 sin Host
+  const host = cabecera.trim().toLowerCase();
+  const sinPuerto = host.replace(/:\d+$/, "");
+  return sinPuerto === "127.0.0.1" || sinPuerto === "localhost" || sinPuerto === "[::1]";
+}
+
+/**
  * Servidor de la interfaz web.
  *
  * @param {{home: string, host?: string, puerto?: number, tiposConocidos?: Set<string>,
@@ -504,6 +515,14 @@ export function crearUiServidor(opciones) {
 
   const servidor = http.createServer(async (req, res) => {
     try {
+      // Solo se atiende a quien llama por 127.0.0.1/localhost. Sin esto, un
+      // sitio malicioso podría reapuntar su dominio a 127.0.0.1 (DNS rebinding)
+      // y leer la API como si fuera el mismo origen.
+      if (!hostPermitido(req.headers.host)) {
+        responder(res, 403, JSON.stringify({ error: "host-no-permitido" }), "application/json; charset=utf-8");
+        return;
+      }
+
       const url = new URL(req.url ?? "/", "http://localhost");
 
       if (req.method === "GET" && url.pathname === "/") {
@@ -559,7 +578,7 @@ export function crearUiServidor(opciones) {
         const sesiones = Array.isArray(cuerpo.sesiones) ? cuerpo.sesiones.map(String) : [];
 
         if (ip === "") throw new UiError("falta la IP del otro equipo");
-        if (!/^\d{6}$/.test(codigo)) throw new UiError("el código son 6 dígitos");
+        if (!/^\d{8}$/.test(codigo)) throw new UiError("el código son 8 dígitos");
         if (!Number.isInteger(puerto) || puerto < 1 || puerto > 65535) throw new UiError("puerto no válido");
         if (sesiones.length === 0) throw new UiError("no has marcado ninguna conversación");
 
