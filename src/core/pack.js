@@ -34,7 +34,7 @@ export class PackError extends Error {
 }
 
 export const FORMATO = "dsh-bridge/1";
-const VERSION_TOOL = "0.1.0";
+const VERSION_TOOL = "0.2.0";
 
 /** Nombre de fichero seguro a partir de un título: sin acentos, ni espacios raros. */
 export function slugDe(texto, maximo = 40) {

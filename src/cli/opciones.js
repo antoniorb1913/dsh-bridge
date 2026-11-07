@@ -23,7 +23,9 @@ const CON_VALOR = new Set([
   "--ip",
   "--codigo",
   "--sesion",
-  "--max"
+  "--max",
+  "--segundos",
+  "--destino"
 ]);
 
 /** Opciones que se pueden repetir y se acumulan en una lista. */
@@ -39,13 +41,15 @@ const INTERRUPTORES = new Set([
   "--si",
   "--quiet",
   "--red",
+  "--abrir",
+  "--buscar",
   "--help",
   "-h",
   "--version",
   "-v"
 ]);
 
-export const COMANDOS = ["list", "export", "import", "serve", "send", "doctor", "help"];
+export const COMANDOS = ["list", "export", "import", "ui", "serve", "send", "discover", "doctor", "help"];
 
 const ALIAS_COMANDOS = {
   listar: "list",
@@ -56,6 +60,11 @@ const ALIAS_COMANDOS = {
   import: "import",
   enviar: "send",
   send: "send",
+  discover: "discover",
+  descubrir: "discover",
+  buscar: "discover",
+  ui: "ui",
+  interfaz: "ui",
   servir: "serve",
   serve: "serve",
   recibir: "serve",

@@ -5,8 +5,8 @@
 **Exporta e importa conversaciones de DeepSeek Harness entre equipos.**
 Un ZIP portable, un menú en castellano y —lo importante— las tres cosas que la app no hace sola.
 
-> Estado: **v0.1** (exportar/importar por consola y menú). La transferencia por red
-> local llega en la v0.2.
+> Estado: **v0.2** — exportar e importar por consola/menú, y **transferencia por la red
+> local** con código de un solo uso, cifrado e interfaz web.
 
 ---
 
@@ -62,8 +62,8 @@ node bin/dsh-bridge.js
   ───────────────────────────────────────────────
   1) Exportar una conversación a ZIP
   2) Importar un ZIP
-  3) Enviar por red a otro PC        (v0.2)
-  4) Recibir por red de otro PC      (v0.2)
+  3) Enviar por red (abre la interfaz web)
+  4) Recibir por red (queda escuchando con un código)
   5) Diagnóstico
   0) Salir
 ```
@@ -88,6 +88,65 @@ node bin/dsh-bridge.js doctor
 conversaciones tarda menos de un segundo). Con `--rapido` solo lee las cabeceras: 87 ms.
 Con `--json` devuelve datos para scripts.
 
+## Por red, sin USB
+
+Los dos equipos tienen que estar en la misma red local y con el programa descargado en
+ambos (sigue sin dependencias).
+
+**1. En el que recibe:**
+
+```bash
+node bin/dsh-bridge.js serve --red --workspace D:\proyectos\web
+```
+
+```
+  dsh-bridge · recibiendo conversaciones
+  ──────────────────────────────────────────────────────────
+  Dirección : http://192.168.1.50:8787
+  Código    : 482913   (un solo uso, caduca 07/11/2026 14:05)
+  Destino   : D:\proyectos\web
+  Límite    : 2,0 GB por bundle
+  En la red : se anuncia como «PORTATIL» (UDP 8788)
+```
+
+**2. En el que envía:**
+
+```bash
+# ¿quién hay esperando?
+node bin/dsh-bridge.js discover
+
+# o directamente, sin escribir la IP
+node bin/dsh-bridge.js send --buscar --codigo 482913 --sesion session-1234
+```
+
+```
+✔ «Página web para Bar El Jardín en Netlify» llegó a D:\proyectos\web
+  eventos   : 22179
+  adjuntos  : 559 copiados, 0 ya estaban
+  tamaño    : 693 MB en claro, 693 MB cifrado
+```
+
+**3. Si prefieres el ratón:**
+
+```bash
+node bin/dsh-bridge.js ui --abrir
+```
+
+Una página en tu equipo (`127.0.0.1:8790`) con la lista de conversaciones, el formulario
+con la IP y el código, un botón de búsqueda en la red y la barra de progreso.
+
+### Cómo viaja y qué se protege
+
+- El contenido va **cifrado con AES-256-GCM**; la clave sale del código con `scrypt` y un
+  `salt` aleatorio por envío. **El código nunca viaja por la red.**
+- El código es de **un solo uso**, caduca a los 10 minutos, admite 5 intentos y bloquea.
+- Cifrado y descifrado van **en streaming**: una conversación de 693 MB no ocupa 693 MB
+  de memoria (medido: ~60 MB por proceso).
+- `serve` escucha solo en este equipo salvo que uses `--red`; sin `--workspace` puede
+  listar pero no recibir.
+- La interfaz web (`ui`) **solo existe en localhost** y exige un token por sesión; no se
+  expone a la red a propósito.
+
 ### Lo que hay que saber antes de usarlo
 
 - **Cierra DeepSeek Harness antes de importar.** Si está abierta, tiene el registro en
@@ -99,6 +158,7 @@ Con `--json` devuelve datos para scripts.
   propio historial y divergen.
 - Si el harness de destino es **más antiguo**, el log se adapta automáticamente
   (marcando lo desconocido como `ignorable`) y se te avisa de qué se ha marcado.
+- La primera vez, **Windows preguntará por el firewall**: permite solo redes privadas.
 
 ## Qué hay dentro del ZIP
 
@@ -192,6 +252,13 @@ node bin/dsh-bridge.js export <session-id> -o ~/Desktop
 node bin/dsh-bridge.js import bundle.zip --workspace ~/projects/web
 node bin/dsh-bridge.js doctor
 ```
+
+**Over the network (v0.2):** the receiving machine runs
+`serve --red --workspace <folder>` and shows a six-digit one-time code; the sending one
+runs `send --buscar --codigo <code> --sesion <id>` (discovery over UDP), or
+`ui --abrir` for a local web page with a list, buttons and a progress bar. The bundle
+travels encrypted with AES-256-GCM, the key derived from the code with scrypt; the code
+itself never goes over the wire.
 
 Requires Node ≥ 22.15 and zero dependencies. **Close DeepSeek Harness before importing**:
 it keeps the registry in memory and overwrites it on exit. Bundles contain your

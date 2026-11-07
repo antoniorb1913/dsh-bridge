@@ -4,6 +4,45 @@ Todos los cambios que merecen mención. Formato basado en
 [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y versionado
 [semántico](https://semver.org/lang/es/).
 
+## [0.2.0] — 2026-11-07
+
+Transferencia por la red local, sin USB ni carpetas compartidas. Sigue sin
+dependencias: solo Node.js ≥ 22.15.
+
+### Añadido
+
+- **`serve`**: el equipo que recibe se queda escuchando (HTTP en la red local) con un
+  **código de 6 dígitos de un solo uso**, caducidad de 10 minutos y máximo de 5 intentos.
+  Al emparejarse entrega un token; sin él no se lista ni se recibe nada. Por defecto solo
+  escucha en `127.0.0.1`; `--red` lo abre a la red y lo avisa.
+- **`send`**: envía una o varias conversaciones. El bundle viaja **cifrado con
+  AES-256-GCM** (clave derivada del código con `scrypt` y un `salt` por envío) y se
+  descifra en streaming: 693 MB se movieron con ~60 MB de memoria.
+- **`discover`** y **`send --buscar`**: anuncio UDP (puerto 8788) y búsqueda en la red,
+  para no escribir la IP a mano. El anuncio no lleva el código ni el contenido.
+- **`ui`**: interfaz web local (`127.0.0.1:8790`) con la lista de conversaciones, el
+  formulario, el botón de búsqueda y la barra de progreso. Token por sesión, CSP estricta
+  y ni una línea de código inline; nunca se expone a la red.
+- **Página de estado** en el servidor de recepción, con dirección, código, caducidad y
+  destino.
+- El menú pasa a ofrecer **enviar** (abre la interfaz) y **recibir** (arranca `serve`).
+
+### Cambiado
+
+- La interfaz dice **de qué almacén lee** y separa las conversaciones que ve la app de las
+  que solo están en disco (huérfanas de workspaces antiguos), con un filtro para ver todas.
+- Límite por bundle configurable con `--max` (2 GB por defecto) y rechazo inmediato por
+  `Content-Length` antes de mover un byte.
+
+### Corregido
+
+- El servidor **se cerraba** al superar el límite de tamaño (`ERR_STREAM_DESTROYED`, error
+  no capturado en la escritura del temporal): cualquiera podía tumbar el receptor con un
+  envío grande. Ahora la escritura está protegida y hay test de regresión.
+- El tope por defecto (512 MB) rechazaba conversaciones reales (693 MB).
+- `send --buscar` se quedaba sin candidatos al probar con un solo PC; ahora usa el propio
+  equipo avisando de ello.
+
 ## [0.1.0] — 2026-11-07
 
 Primera versión: exportar e importar conversaciones de DeepSeek Harness por consola y

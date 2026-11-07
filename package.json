@@ -1,6 +1,6 @@
 {
   "name": "dsh-bridge",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Exporta e importa conversaciones de DeepSeek Harness entre equipos: ZIP portable, menú y las tres piezas que la app no hace sola (registro, ruta y compatibilidad de eventos).",
   "keywords": [
     "deepseek-harness",
