@@ -53,6 +53,8 @@ dsh-bridge/
 ├─ src/cli/
 │  ├─ opciones.js             argumentos, alias en castellano y errores de uso    [T11 ✔]
 │  └─ formato.js              tablas, tamaños, fechas y selecciones (1,3 · 2-4)    [T11 ✔]
+├─ src/net/
+│  └─ servidor.js             recepción en red: código de un solo uso y token     [T16 ✔]
 ├─ src/core/
 │  ├─ zstd.js                 frames Zstandard, cabecera, comprimir/descomprimir  [T2 ✔]
 │  ├─ zip.js                  ZIP propio: escribir (store) y leer (store/deflate)  [T3 ✔]

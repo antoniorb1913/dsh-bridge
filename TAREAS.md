@@ -193,10 +193,17 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 ## Fase 4 — v0.2: red local
 
 ### T16 · Servidor de recepción (`serve`)
-**Estado:** ⏳ Pendiente · **Depende de:** T15 · **Rama propuesta:** `feat/t16-servidor`
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T15 · **Rama:** `feat/t16-servidor` · **Commit:** `feat: servidor de recepción con código de un solo uso`
+**Archivos:** `src/net/servidor.js`, `test/servidor.test.js`, `bin/dsh-bridge.js`, `src/cli/opciones.js`, `src/cli/formato.js`
 
-- HTTP en la red local, código de 6 dígitos de un solo uso, caducidad y límite de intentos
-- Mostrar IP, puerto y código por consola
+- [x] HTTP con `node:http`, sin dependencias: `GET /estado`, `POST /emparejar`, `GET /sesiones`
+- [x] **Código de 6 dígitos, un solo uso, con caducidad (10 min) y máximo de 5 intentos**; comparación en tiempo constante y el código nunca se devuelve
+- [x] Al acertar se emite un **token** (32 bytes) para el resto de la sesión, con su propia caducidad; sin token no se lista nada
+- [x] **Por defecto solo escucha en `127.0.0.1`**; `--red` lo abre a la red local, avisando del riesgo y enseñando la IP; límite de cuerpo (64 KB) con 413 y conexión cerrada
+- [x] `dsh-bridge serve` enseña dirección, código y caducidad, y propone el comando del otro equipo; `Ctrl+C` para parar
+- [x] 8 tests nuevos (134 en total) y **prueba real**: servidor arrancado, `/estado` sin código, emparejado con `482913`, **115 conversaciones listadas con token**, y el código reutilizado responde 401
+- [x] Comprobado también en modo `--red`, accesible por la IP de la máquina
+- [ ] La recepción del bundle cifrado llega en la T17 (`send`)
 
 ### T17 · Envío (`send`) con cifrado
 **Estado:** ⏳ Pendiente · **Depende de:** T16 · **Rama propuesta:** `feat/t17-envio`
