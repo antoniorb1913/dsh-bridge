@@ -86,6 +86,21 @@ test("importa una conversación con sus adjuntos y la registra", () => {
   }
 });
 
+test("el workspace se registra con el nombre de la carpeta, no con el título del chat", () => {
+  const { archivo, carpeta } = prepararBundle({ cwd: "D:\\Users\\Origen\\Desktop\\juego" });
+  const { home, workspace } = prepararDestino();
+  try {
+    const resultado = importarBundle(archivo, { home, workspace, tiposConocidos: CONOCIDOS, appAbierta: false });
+    const { registro } = leerRegistro(home);
+    const ficha = registro.tables.workspaces[resultado.registro.workspaceId];
+    // El chat se llama «Conversación de prueba» (ver los eventos del bundle),
+    // pero en la barra lateral el proyecto tiene que salir como la carpeta.
+    assert.equal(ficha.title, "juego", "el nombre del proyecto es el de la carpeta, no el del chat");
+  } finally {
+    limpiar(carpeta, home, workspace);
+  }
+});
+
 test("dos conversaciones en la misma carpeta comparten un solo workspace", () => {
   const primera = prepararBundle();
   const segunda = prepararBundle({ id: SESION_2 });

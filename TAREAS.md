@@ -299,6 +299,17 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 
 ## Fase 6 — Arreglos que encontró el CI
 
+### T25 · Nombre del proyecto y destinos, como se esperaba
+**Estado:** 👀 Esperando tu OK · **Depende de:** T24 · **Rama propuesta:** `fix/nombre-proyecto`
+**Petición del usuario (2026-11-07): «creé una carpeta llamada juego, la paso por red y crea la carpeta pero le pone el nombre del chat»; «en el apartado 4, ¿no debería abrir el explorador como en exportar e importar?»**
+**Archivos:** `src/core/import.js`, `bin/dsh-bridge.js`, `test/import.test.js`, `TAREAS.md`, `HISTORIAL.md`
+
+- [x] **El proyecto se registra con el nombre de la carpeta, no con el título del chat:** el `title` del workspace sale de `meta.workspace.titulo` (la carpeta del emisor) y no de `meta.sesion.titulo`. Afecta igual a la red y al ZIP, porque los dos pasan por `importarBundle`
+- [x] **ZIP sin `--workspace`:** si la carpeta de origen no existe en este equipo, se crea `Documents\recibidas\<nombre del proyecto>` en vez de fallar
+- [x] **Menú, opción 4:** ya no pide teclear una ruta; arranca `serve --red` y cada conversación se coloca sola (o pregunta la carpeta en el diálogo)
+- [x] 185 pruebas (1 nueva: el workspace se registra como «juego» y no como el título del chat)
+- [x] Comprobado a mano: ZIP con la carpeta de origen borrada → `! esa carpeta no existe en este equipo: se crea C:\...\Documents\recibidas\proyecto` y el workspace queda con nombre `proyecto`
+
 ### T24 · Pruebas de red tolerantes a las rutas cortas de Windows
 **Estado:** ✅ Completada (2026-11-07) · **Depende de:** T23 · **Rama:** `fix/ci-rutas-cortas` · **Commit:** `test: compara rutas canonicalizadas para que el CI de Windows pase`
 **Archivos:** `test/red.test.js`, `TAREAS.md`, `HISTORIAL.md`

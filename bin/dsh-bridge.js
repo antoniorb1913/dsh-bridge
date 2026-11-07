@@ -142,6 +142,25 @@ async function comandoImport(posicionales, opciones) {
 
   const { tipos } = leerTipos(opciones);
   const plan = analizarBundle(archivo, { tiposConocidos: tipos });
+
+  // Si la carpeta de origen no existe aquí y no se indicó otra, se crea con su
+  // nombre bajo Documents\recibidas: lo mismo que hace la recepción por red.
+  if (workspace === undefined && opciones.seco !== true) {
+    const declarada = plan.header.cwd;
+    let existe = false;
+    try {
+      existe = declarada !== undefined && fs.statSync(declarada).isDirectory();
+    } catch {
+      existe = false;
+    }
+    if (!existe) {
+      const nombre = nombreBase(declarada ?? "") || "recibidas";
+      workspace = path.join(os.homedir(), "Documents", "recibidas", nombre);
+      fs.mkdirSync(workspace, { recursive: true });
+      aviso(`esa carpeta no existe en este equipo: se crea ${workspace}`);
+    }
+  }
+
   escribir(`bundle     : ${path.basename(archivo)}`);
   escribir(`conversación: ${plan.meta?.sesion?.titulo ?? "(sin título)"}`);
   escribir(`sesión     : ${plan.header.id}`);
@@ -794,13 +813,10 @@ async function menu(home, opciones) {
         rl.close();
         return await comandoUi({ ...opciones, abrir: opciones.abrir ?? true });
       } else if (opcion === "4") {
-        const carpeta = (await rl.question("  Carpeta del proyecto donde guardar lo que llegue: ")).trim();
-        if (carpeta === "") {
-          aviso("hace falta una carpeta de destino: sin ella solo se podría listar");
-          continue;
-        }
+        // Sin carpeta fija: cada conversación se coloca sola (carpeta de su
+        // proyecto, o la que se elija en el diálogo). No hay que teclear rutas.
         rl.close();
-        return await comandoServe({ ...opciones, red: true, workspace: carpeta });
+        return await comandoServe({ ...opciones, red: true });
       } else if (opcion === "5") comandoDoctor(opciones);
       else if (opcion !== "") aviso(`opción no válida: ${opcion}`);
       if (opcion !== "") await rl.question("  (Enter para continuar) ");

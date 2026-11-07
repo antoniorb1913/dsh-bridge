@@ -948,4 +948,37 @@ El programa estaba bien; el fallo era de las pruebas, que comparaban texto en ve
 3. Si quieres ver la causa con tus ojos: en el log antiguo, `runneradmin` (lo que devuelve el programa) frente a `RUNNER~1` (lo que esperaba la prueba).
 4. Abre `TAREAS.md`: T24 en 👀 hasta que el CI confirme.
 
+---
+
+## 2026-11-07 · T25 — El proyecto se llama como su carpeta
+
+**Estado:** 👀 Esperando tu OK
+**Rama:** `fix/nombre-proyecto`
+**Commit:** `fix: el workspace importado se registra con el nombre de su carpeta`
+**Archivos:** `src/core/import.js`, `bin/dsh-bridge.js`, `test/import.test.js`, `TAREAS.md`, `HISTORIAL.md`
+
+### 1. ¿Qué he realizado?
+
+Al importar (por red o por ZIP), el proyecto se registraba con el **título de la conversación**, así que una carpeta `juego` con el chat «Probar app para pasar sesiones» aparecía en la barra lateral como «Probar app…». Ahora el proyecto toma el nombre de **su carpeta** (`meta.workspace.titulo`) y el título del chat se queda solo para los mensajes. Además: el ZIP sin `--workspace` ya no falla si la carpeta de origen no existe (la crea en `Documents\recibidas`), y la opción 4 del menú deja de pedir rutas a mano.
+
+### 2. ¿Por qué?
+
+El usuario lo dijo claro: «creo la carpeta y mete el chat, pero le pone el nombre del propio chat». Un proyecto tiene que llamarse como su carpeta: si no, cada conversación importada bautiza el proyecto y la barra lateral se llena de nombres de chat. Y en el menú, pedir una ruta a mano era justo lo que ya habíamos quitado en exportar e importar.
+
+### 3. ¿Dónde verlo en el código?
+
+- `src/core/import.js:231-241` — `tituloWorkspace` (carpeta) separado de `tituloConversacion`.
+- `src/core/import.js:271` — `registrarSesion` con el título del workspace.
+- `bin/dsh-bridge.js:143-162` — ZIP: crea `Documents\recibidas\<proyecto>` si la carpeta original no existe.
+- `bin/dsh-bridge.js:520-526` — menú, opción 4, sin preguntar carpeta.
+- `test/import.test.js:89-101` — el proyecto se registra como «juego».
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 185` / `fail 0`**.
+2. Por red: manda una conversación que viva en `juego`. En el receptor, el proyecto debe llamarse **juego** (no como el chat) y la carpeta también `juego`.
+3. Por ZIP con la carpeta de origen borrada: `! esa carpeta no existe en este equipo: se crea ...\Documents\recibidas\juego`.
+4. Menú → opción 4: ya no pregunta ruta; sale el banner de recepción.
+5. Abre `TAREAS.md`: T25 en 👀 hasta tu «sí».
+
 _(Fin del historial.)_
