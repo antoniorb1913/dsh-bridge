@@ -297,6 +297,19 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 
 ---
 
+## Fase 6 — Arreglos que encontró el CI
+
+### T24 · Pruebas de red tolerantes a las rutas cortas de Windows
+**Estado:** 👀 Esperando tu OK (pendiente de que el CI salga verde) · **Depende de:** T23 · **Rama propuesta:** `fix/ci-rutas-cortas`
+**Archivos:** `test/red.test.js`, `TAREAS.md`, `HISTORIAL.md`
+
+- [x] **CI en rojo en `main`** (3 trabajos de Windows, runs #17, #19 y #20): 181 pruebas pasaban y **3 fallaban**
+- [x] **Causa:** en el runner, `%TEMP%` es `C:\Users\RUNNER~1\...` (nombre corto 8.3) y el programa devuelve la ruta larga real (`C:\Users\runneradmin\...`). Las tres pruebas comparaban **texto exacto** con la ruta de `os.tmpdir()`
+- [x] **Arreglo:** comparar `samePath(valor, canonicalize(esperado))`, con las dos partes canonicalizadas. No se toca el programa: solo estaban mal las aserciones
+- [ ] **Confirmar en GitHub:** el PR de este arreglo y el push a `main` deben salir con los 7 trabajos en verde
+
+---
+
 ## Notas
 
 - La rama de trabajo actual es `main`; el usuario crea la rama de cada tarea (REGLA 4).
