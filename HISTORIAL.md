@@ -652,4 +652,49 @@ Es la otra mitad del «pongo la IP y se transfiere»: alguien tiene que esperar 
 4. Modo red: `serve --red` y consultar por la IP de la máquina; comprobado en este equipo.
 5. Abre `TAREAS.md:195`: T16 en ✅ y T17 en ⏳.
 
-_(Sin más entradas todavía: la T17 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
+---
+
+## 2026-11-07 · T17 — Envío cifrado entre equipos
+
+**Estado:** ✅ Completada
+**Rama:** `feat/t17-envio`
+**Commit:** `feat: envío cifrado entre equipos con recepción e importación`
+**Archivos:** `src/net/cifrado.js`, `src/net/cliente.js`, `src/net/servidor.js`, `bin/dsh-bridge.js`, `src/cli/opciones.js`, `src/cli/formato.js`, `test/cifrado.test.js`, `test/red.test.js`, `TAREAS.md`, `AGENTS.md`
+
+### 1. ¿Qué he realizado?
+
+El círculo completo de la red: `send` se empareja con el servidor, exporta cada conversación, la **cifra con AES-256-GCM** (clave derivada del código con `scrypt` y un `salt` aleatorio por envío, sin que el código viaje nunca) y la sube a `/recibir`, que la descifra **en streaming** y la instala con el mismo `importarBundle` que usa el ZIP. Se pueden mandar varias conversaciones con un solo emparejamiento.
+
+### 2. ¿Por qué?
+
+Era la idea con la que empezó todo: poner la IP y que la conversación pase sin USB. Y el cifrado no es adorno: el código de 6 dígitos ya existe para emparejar, así que se reutiliza como secreto compartido para el contenido. Al ir en streaming, una conversación de 693 MB no necesita 693 MB de memoria.
+
+La prueba con la conversación grande encontró **dos fallos que los tests no veían**: el tope de 512 MB rechazaba justo el caso real, y al superarlo el servidor **se caía** (escribía en un fichero ya cerrado, con error no capturado), o sea que cualquiera podía tumbar el receptor con un envío grande.
+
+### 3. ¿Dónde verlo en el código?
+
+- `src/net/cifrado.js:38-87` — `derivarClave`, `cifrar` y `descifrar` (AES-256-GCM, formato `DSH1|salt|nonce|cifrado|tag`).
+- `src/net/cifrado.js:90-200` — cifrado y descifrado de ficheros en trozos.
+- `src/net/cliente.js:66-108` — `emparejar`.
+- `src/net/cliente.js:123-200` — `enviarSesiones`: exportar, cifrar, subir y recoger el resultado.
+- `src/net/servidor.js:123-170` — `recibirArchivo`: escritura a disco protegida (aquí estaba el cierre del proceso).
+- `src/net/servidor.js:275-340` — `/recibir`: comprobación de tamaño por `Content-Length`, descifrado e importación.
+- `src/net/servidor.js:179` — tope por defecto de 2 GB.
+- `bin/dsh-bridge.js:232-320` — `serve` con `--workspace` y `--max`; `bin/dsh-bridge.js:286-340` — `send`.
+- `test/cifrado.test.js` — 9 tests; `test/red.test.js` — 8, incluido el de regresión del 413.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 151` / `fail 0`**.
+2. Cifrado, sin red: los tests «con otro código no se descifra» y «un solo byte cambiado invalida el paquete».
+3. Transferencia real (dos consolas; usa `--dsh-home` temporal para no tocar tu almacén):
+
+   ```
+   dsh-bridge serve --dsh-home <temp> --workspace <temp>\web --codigo 123456
+   dsh-bridge send --ip 127.0.0.1 --codigo 123456 --sesion <id>
+   ```
+4. Resultado comprobado en este equipo: la conversación del bar —**693 MB, 22.179 eventos, 559 adjuntos**— llegó en **7 s** con los procesos en ~60 MB de memoria, y el destino quedó con 1 workspace válido, 559 adjuntos y el `cwd` reescrito. La pequeña: 4,1 MB en 543 ms.
+5. Regresión del fallo grave: `test/red.test.js` «un bundle demasiado grande se rechaza y el servidor sigue vivo».
+6. Abre `TAREAS.md:208`: T17 en ✅ y T18 en ⏳.
+
+_(Sin más entradas todavía: la T18 se registrará aquí en cuanto respondas «sí» a su «¿Todo OK?».)_
