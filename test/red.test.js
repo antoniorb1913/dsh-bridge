@@ -274,6 +274,113 @@ test("un fallo al avisar no tumba la recepción", async () => {
   }
 });
 
+test("el receptor puede preguntar la carpeta y usarla al importar", async () => {
+  const destinoElegido = carpetaTemporal("dsh-bridge-elegida-");
+  const preguntas = [];
+  const red = await montarRed({
+    workspace: undefined,
+    elegirDestino: async () => {
+      preguntas.push("pregunta");
+      return destinoElegido;
+    }
+  });
+  try {
+    await enviarSesiones({
+      home: red.origen.home,
+      sesiones: [red.origen.sesiones.texto],
+      ip: red.ip,
+      puerto: red.puerto,
+      codigo: CODIGO,
+      tiposConocidos: TIPOS_CONOCIDOS_020_RC2
+    });
+    assert.equal(preguntas.length, 1, "debe preguntar una vez por cada conversación");
+    const recibidas = listSessions(red.destino, { full: true });
+    assert.equal(recibidas.length, 1);
+    assert.equal(recibidas[0].cwd, destinoElegido, "la conversación va a la carpeta elegida, no a la fija");
+  } finally {
+    fs.rmSync(destinoElegido, { recursive: true, force: true });
+    await red.cerrar();
+  }
+});
+
+test("si no se elige carpeta, el envío se rechaza y no se importa nada", async () => {
+  const red = await montarRed({ workspace: undefined, elegirDestino: async () => undefined });
+  try {
+    await assert.rejects(
+      () =>
+        enviarSesiones({
+          home: red.origen.home,
+          sesiones: [red.origen.sesiones.texto],
+          ip: red.ip,
+          puerto: red.puerto,
+          codigo: CODIGO,
+          tiposConocidos: TIPOS_CONOCIDOS_020_RC2
+        }),
+      (error) => {
+        assert.ok(error instanceof RedError);
+        assert.match(error.message, /409|sin-destino|rechazó/i);
+        return true;
+      }
+    );
+    assert.equal(fs.existsSync(sessionsRoot(red.destino)), false);
+  } finally {
+    await red.cerrar();
+  }
+});
+
+test("un fallo al preguntar tampoco importa nada", async () => {
+  const red = await montarRed({
+    workspace: undefined,
+    elegirDestino: async () => {
+      throw new Error("se rompió el diálogo");
+    }
+  });
+  try {
+    await assert.rejects(() =>
+      enviarSesiones({
+        home: red.origen.home,
+        sesiones: [red.origen.sesiones.texto],
+        ip: red.ip,
+        puerto: red.puerto,
+        codigo: CODIGO,
+        tiposConocidos: TIPOS_CONOCIDOS_020_RC2
+      })
+    );
+    assert.equal(fs.existsSync(sessionsRoot(red.destino)), false);
+  } finally {
+    await red.cerrar();
+  }
+});
+
+test("si el receptor cancela, la conversación va a la carpeta del emisor", async () => {
+  const espejo = carpetaTemporal("dsh-bridge-espejo-");
+  const red = await montarRed({
+    workspace: undefined,
+    elegirDestino: async () => {
+      // Lo que hace el CLI al cancelar: devuelve la carpeta espejo del emisor.
+      const destino = path.join(espejo, "bar");
+      fs.mkdirSync(destino, { recursive: true });
+      return destino;
+    }
+  });
+  try {
+    await enviarSesiones({
+      home: red.origen.home,
+      sesiones: [red.origen.sesiones.texto],
+      ip: red.ip,
+      puerto: red.puerto,
+      codigo: CODIGO,
+      tiposConocidos: TIPOS_CONOCIDOS_020_RC2
+    });
+    const recibidas = listSessions(red.destino, { full: true });
+    assert.equal(recibidas.length, 1);
+    assert.equal(recibidas[0].cwd, path.join(espejo, "bar"));
+  } finally {
+    fs.rmSync(espejo, { recursive: true, force: true });
+    await red.cerrar();
+  }
+});
+
 test("el servidor apunta lo último que ha recibido", async () => {
   const red = await montarRed();
   try {

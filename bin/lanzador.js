@@ -9,7 +9,6 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import readline from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
@@ -59,21 +58,20 @@ function prepararCarpeta(carpeta) {
 }
 
 async function recibir(extra) {
-  let carpeta = extra[0] !== undefined && !extra[0].startsWith("-") ? extra.shift() : undefined;
+  const carpeta = extra[0] !== undefined && !extra[0].startsWith("-") ? extra.shift() : undefined;
 
-  if (carpeta === undefined) {
-    const porDefecto = path.join(os.homedir(), "Documents", "recibidas");
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    const respuesta = (await rl.question(`Carpeta donde colgar las conversaciones [${porDefecto}]: `)).trim();
-    rl.close();
-    carpeta = respuesta === "" ? porDefecto : respuesta;
+  let elegida;
+  if (carpeta !== undefined) {
+    elegida = prepararCarpeta(carpeta);
+    if (elegida === undefined) process.exit(1);
   }
 
-  const elegida = prepararCarpeta(carpeta);
-  if (elegida === undefined) process.exit(1);
-
   console.log("");
-  lanzar(["serve", "--red", "--workspace", path.resolve(elegida), ...extra]);
+  if (elegida === undefined) {
+    console.log("  Cuando llegue una conversación te preguntaré en qué carpeta quieres guardarla.");
+    console.log("  (En ese diálogo puedes crear una carpeta nueva con el botón «Nueva carpeta»).");
+  }
+  lanzar(["serve", "--red", ...(elegida === undefined ? [] : ["--workspace", path.resolve(elegida)]), ...extra]);
 }
 
 function enviar(extra) {

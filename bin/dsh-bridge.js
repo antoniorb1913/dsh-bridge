@@ -298,20 +298,89 @@ async function comandoServe(opciones) {
     return 0;
   }
 
-  const opcionesServidor = {    home,
+  // Destino de lo que llega, sin preguntar nada (salvo `--preguntar`):
+  //   1. Si esa conversación ya está en este equipo, se actualiza donde está.
+  //   2. Si no, a la carpeta del proyecto del emisor (la misma ruta si existe).
+  //   3. Y si esa carpeta no existe, se crea con su nombre en Documents\recibidas.
+  const preguntarDestino = opciones.preguntar === true && process.stdin.isTTY;
+  const baseRecepcion = path.join(os.homedir(), "Documents", "recibidas");
+  let ultimaElegida = workspace;
+
+  const resolverDestino = async (zip) => {
+    let plan;
+    try {
+      plan = analizarBundle(zip, { tiposConocidos: tipos });
+    } catch {
+      plan = undefined;
+    }
+    const id = plan?.header?.id;
+    const proyectoEmisor = plan?.header?.cwd;
+
+    if (preguntarDestino) {
+      escribir("");
+      aviso("llega una conversación: elige la carpeta del proyecto (puedes crear una nueva)");
+      const elegida = await elegirCarpeta({
+        titulo: "¿En qué carpeta guardo la conversación que llega?",
+        carpetaInicial: ultimaElegida ?? baseRecepcion
+      });
+      if (elegida !== undefined) {
+        ultimaElegida = elegida;
+        escribir(`  destino: ${elegida}`);
+        return elegida;
+      }
+      aviso("no elegiste carpeta: la guardo donde corresponda");
+    }
+
+    // 1. ¿Ya la tengo? Se actualiza en su sitio, con copia del anterior.
+    if (typeof id === "string") {
+      try {
+        const existente = listSessions(home, { full: false }).find((sesion) => sesion.id === id);
+        if (existente?.cwd) {
+          escribir(`  destino: ${existente.cwd}  (ya la tenías: se actualiza)`);
+          return existente.cwd;
+        }
+      } catch {
+        // Sin poder leer el almacén se sigue con la carpeta del emisor.
+      }
+    }
+
+    // 2. La carpeta del emisor tal cual, si en este equipo existe esa ruta.
+    if (typeof proyectoEmisor === "string" && proyectoEmisor !== "") {
+      try {
+        if (fs.statSync(proyectoEmisor).isDirectory()) {
+          escribir(`  destino: ${proyectoEmisor}  (la carpeta del proyecto del otro equipo)`);
+          return proyectoEmisor;
+        }
+      } catch {
+        // Esa ruta no existe aquí: se crea más abajo con el mismo nombre.
+      }
+    }
+
+    // 3. Se crea con el nombre del proyecto del emisor.
+    const nombre = nombreBase(proyectoEmisor ?? "") || "recibidas";
+    const destino = path.join(baseRecepcion, nombre);
+    fs.mkdirSync(destino, { recursive: true });
+    escribir(`  destino: ${destino}  (carpeta nueva)`);
+    return destino;
+  };
+
+  const opcionesServidor = {
+    home,
     host,
     codigo: opciones.codigo,
     workspace,
-    forzar: opciones.forzar === true,
+    // Una conversación recibida siempre reemplaza a la que hubiera: la que viaja
+    // es la buena. El importador guarda copia de la anterior al hacerlo.
+    forzar: true,
     tiposConocidos: tipos,
     maxBytes,
+    elegirDestino: workspace === undefined || opciones.preguntar === true ? resolverDestino : undefined,
     alRecibir: (resultado) => {
       escribir("");
-      ok(`recibida «${resultado.titulo ?? resultado.sesionId}»`);
+      ok(`${resultado.reemplaza === true ? "actualizada" : "recibida"} «${resultado.titulo ?? resultado.sesionId}»`);
       escribir(`  eventos   : ${resultado.eventos}`);
       escribir(`  adjuntos  : ${resultado.adjuntos.copiados} copiados, ${resultado.adjuntos.yaExistian} ya estaban`);
       escribir(`  queda en  : ${resultado.workspace}`);
-      escribir("  (la carpeta del proyecto no cambia: la conversación vive dentro de DeepSeek Harness)");
       for (const nota of resultado.avisos ?? []) aviso(nota);
       escribir("  Ctrl+C para parar.");
       escribir("");
@@ -368,7 +437,13 @@ async function comandoServe(opciones) {
   escribir("  " + "─".repeat(58));
   escribir(`  Dirección : http://${ip}:${puertoReal}`);
   escribir(`  Código    : ${datos.codigo}   (un solo uso, caduca ${formatearFecha(datos.expira)})`);
-  escribir(`  Destino   : ${workspace ?? "(sin --workspace: solo se puede listar, no recibir)"}`);
+  escribir(
+    `  Destino   : ${
+      preguntarDestino
+        ? "te lo preguntaré al recibir (con «Nueva carpeta»)"
+        : (workspace ?? "la carpeta del proyecto del otro equipo; si ya la tienes, se actualiza ahí")
+    }`
+  );
   escribir(`  Límite    : ${formatearBytes(maxBytes ?? 2 * 1024 * 1024 * 1024)} por bundle`);
   escribir(`  En la red : ${respondedor === undefined ? "solo por IP" : `se anuncia como «${respondedor.datos.nombre}» (UDP ${PUERTO_DESCUBRIR})`}`);
   escribir("");
@@ -382,7 +457,7 @@ async function comandoServe(opciones) {
   } else {
     aviso("solo accesible desde este equipo; usa --red para abrirlo a la red local");
   }
-  if (workspace === undefined) aviso("sin --workspace no se puede recibir: arranca de nuevo indicando la carpeta del proyecto");
+  if (workspace === undefined && !preguntarDestino) aviso("sin --workspace: cada conversación irá a Documents\\recibidas con el nombre de la carpeta del otro equipo");
   escribir("  Ctrl+C para parar.");
   escribir("");
 

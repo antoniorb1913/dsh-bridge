@@ -109,7 +109,7 @@ ambos (sigue sin dependencias).
 **1. En el que recibe:**
 
 ```bash
-node bin/dsh-bridge.js serve --red --workspace D:\proyectos\web
+node bin/dsh-bridge.js serve --red
 ```
 
 ```
@@ -117,10 +117,22 @@ node bin/dsh-bridge.js serve --red --workspace D:\proyectos\web
   ──────────────────────────────────────────────────────────
   Dirección : http://192.168.1.50:8787
   Código    : 482913   (un solo uso, caduca 07/11/2026 14:05)
-  Destino   : D:\proyectos\web
+  Destino   : la carpeta del proyecto del otro equipo; si ya la tienes, se actualiza ahí
   Límite    : 2,0 GB por bundle
   En la red : se anuncia como «PORTATIL» (UDP 8788)
 ```
+
+**¿Dónde acaba cada conversación?** No hay que decidirlo: se resuelve solo.
+
+| Situación | Qué hace |
+|---|---|
+| Ya tienes esa conversación | La **actualiza donde esté** y guarda copia del histórico anterior (`.bak-AAAAMMDDhhmmss`) |
+| No la tienes y existe su carpeta | La mete en **esa carpeta** (la ruta del proyecto del emisor) |
+| No existe la carpeta | La **crea** con su nombre dentro de `Documents\recibidas` |
+
+Los adjuntos se deduplican por hash y la ficha del workspace no se repite: nunca acabas con
+la misma conversación dos veces. Si prefieres elegir tú la carpeta, arranca con
+`serve --red --preguntar` (el diálogo incluye «Nueva carpeta»).
 
 **2. En el que envía:**
 
