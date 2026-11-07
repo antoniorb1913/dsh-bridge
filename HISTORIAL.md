@@ -921,14 +921,14 @@ El usuario lo pidió tal cual: «que se guarde en la carpeta que tiene el emisor
 
 ## 2026-11-07 · T24 — Pruebas de red tolerantes a las rutas cortas de Windows
 
-**Estado:** 👀 Esperando tu OK (pendiente de que el CI salga verde)
+**Estado:** ✅ Completada
 **Rama:** `fix/ci-rutas-cortas`
 **Commit:** `test: compara rutas canonicalizadas para que el CI de Windows pase`
 **Archivos:** `test/red.test.js`, `TAREAS.md`, `HISTORIAL.md`
 
 ### 1. ¿Qué he realizado?
 
-El CI de `main` estaba **en rojo**: de 184 pruebas pasaban 181 y fallaban 3, solo en los tres trabajos de Windows. Las tres comparaban la ruta del workspace con `assert.equal`, y en el runner `%TEMP%` se llama `C:\Users\RUNNER~1\…` (nombre corto 8.3) mientras el programa devuelve la ruta larga real `C:\Users\runneradmin\…`. Ahora se comparan las dos canonicalizadas con `samePath`.
+El CI de `main` estaba **en rojo**: de 184 pruebas pasaban 181 y fallaban 3, solo en los tres trabajos de Windows. Las tres comparaban la ruta del workspace con `assert.equal`, y en el runner `%TEMP%` se llama `C:\Users\RUNNER~1\…` (nombre corto 8.3) mientras el programa devuelve la ruta larga real `C:\Users\runneradmin\…`. Ahora se comparan las dos canonicalizadas con `samePath`. Confirmado en GitHub: **PR #27 (run #21) y `main` (run #22) con los 7 trabajos en verde**.
 
 ### 2. ¿Por qué?
 
