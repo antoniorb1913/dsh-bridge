@@ -52,6 +52,7 @@ dsh-bridge/
 ├─ bin/dsh-bridge.js          CLI y menú: orquesta, la lógica está en src/core    [T11 ✔]
 ├─ src/cli/
 │  ├─ opciones.js             argumentos, alias en castellano y errores de uso    [T11 ✔]
+│  ├─ dialogos.js             ventanas del sistema para elegir ficheros/carpetas  [T21 ✔]
 │  └─ formato.js              tablas, tamaños, fechas y selecciones (1,3 · 2-4)    [T11 ✔]
 ├─ src/net/
 │  ├─ servidor.js             recepción en red: código de un solo uso y token     [T16 ✔]
