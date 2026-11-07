@@ -216,6 +216,7 @@ test("la pÃ¡gina ofrece buscar equipos en la red", async () => {
     const html = await (await fetch(montado.url + "/")).text();
     assert.match(html, /Buscar en la red/);
     assert.match(html, /id="equipos"/);
+    assert.match(html, /id="aviso-red"/, "el resultado de la búsqueda tiene su propio hueco");
 
     assert.equal((await fetch(montado.url + "/api/descubrir", { method: "POST" })).status, 401);
 

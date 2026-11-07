@@ -231,6 +231,49 @@ test("un cuerpo manipulado se rechaza al descifrar", async () => {
   }
 });
 
+test("el servidor avisa por consola cuando recibe algo", async () => {
+  let aviso;
+  const red = await montarRed({ alRecibir: (resultado) => { aviso = resultado; } });
+  try {
+    await enviarSesiones({
+      home: red.origen.home,
+      sesiones: [red.origen.sesiones.texto],
+      ip: red.ip,
+      puerto: red.puerto,
+      codigo: CODIGO,
+      tiposConocidos: TIPOS_CONOCIDOS_020_RC2
+    });
+    assert.ok(aviso !== undefined, "el receptor debe avisar de lo que llega");
+    assert.equal(aviso.titulo, "Conversación de texto");
+    assert.ok(aviso.eventos > 0);
+    assert.equal(aviso.workspace, red.workspace);
+    assert.equal(typeof aviso.adjuntos.copiados, "number");
+  } finally {
+    await red.cerrar();
+  }
+});
+
+test("un fallo al avisar no tumba la recepción", async () => {
+  const red = await montarRed({
+    alRecibir: () => {
+      throw new Error("el aviso se rompe");
+    }
+  });
+  try {
+    await enviarSesiones({
+      home: red.origen.home,
+      sesiones: [red.origen.sesiones.texto],
+      ip: red.ip,
+      puerto: red.puerto,
+      codigo: CODIGO,
+      tiposConocidos: TIPOS_CONOCIDOS_020_RC2
+    });
+    assert.equal(listSessions(red.destino).length, 1, "la conversación debe quedar importada igual");
+  } finally {
+    await red.cerrar();
+  }
+});
+
 test("el servidor apunta lo último que ha recibido", async () => {
   const red = await montarRed();
   try {

@@ -269,6 +269,21 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [x] 7 tests nuevos (174 en total) de la parte que se puede probar sin abrir ventanas: comando de cada sistema, comillas de PowerShell, `--sin-dialogos` y nombres
 - [x] **Comprobado por el usuario:** el diálogo se abre de verdad, elige carpeta y el ZIP se guarda donde toca
 
+### T22 · Lanzadores de doble clic
+**Estado:** ✅ Completada (2026-11-07) · **Depende de:** T21 · **Rama:** `feat/t22-lanzadores` · **Commit:** `feat: lanzadores de doble clic y aviso al recibir`
+**Petición del usuario (2026-11-07): «no se puede hacer un ejecutable de terminal para que me abra el receptor? y para el emisor también, sin tener que lanzar comando»**
+**Archivos:** `recibir.cmd`, `enviar.cmd`, `dsh-bridge.cmd`, `bin/lanzador.js`, `test/lanzadores.test.js`
+
+- [x] **`recibir.cmd`**: doble clic, pregunta la carpeta (Enter = `Documents\recibidas`), la crea si no está y arranca `serve --red`
+- [x] **`enviar.cmd`**: doble clic, abre la interfaz web en el navegador
+- [x] **`dsh-bridge.cmd`**: el menú; con argumentos se los pasa al programa
+- [x] Todo lo que habla con el usuario vive en `bin/lanzador.js` (Node, UTF-8): los `.cmd` solo comprueban que hay Node y llaman, porque cmd.exe no lleva bien ni los acentos ni los finales de línea
+- [x] **Fallo corregido:** los `.cmd` se habían escrito con saltos **LF** y cmd.exe se comía dos caracteres por línea («No se esperaba node en este momento»). Ahora van en **CRLF y solo ASCII**, con un test que lo vigila
+- [x] 4 tests nuevos (180 en total) y prueba real: lanzado con `cmd /c recibir.cmd`, recibió la conversación (2.530 eventos, 14 adjuntos) y creó la carpeta que no existía
+- [x] **Puerto ocupado:** si ya hay otro `serve` de este programa en el 8787, el lanzador lo detecta, avisa («mira esa ventana: el código está ahí») y se cierra sin abrir un duplicado; si quien ocupa el puerto es otro programa, prueba el 8788, 8789…
+- [x] **Carpeta inválida:** si el nombre no vale (`<`, `>`, `:`…), avisa del motivo y sigue con `Documents\recibidas` en vez de rendirse
+- [x] **Aviso al recibir** (lo que faltaba): el receptor imprime «✔ recibida «título» · eventos · adjuntos · dónde queda»
+
 ---
 
 ## Notas

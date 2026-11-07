@@ -332,6 +332,13 @@ export function crearServidor(opciones) {
             forzar: opciones.forzar === true
           });
           estado.ultimoRecibido = { sesion: resultado.sesionId, cuando: new Date().toISOString() };
+          if (typeof opciones.alRecibir === "function") {
+            try {
+              opciones.alRecibir(resultado);
+            } catch {
+              // Un fallo al avisar no puede tumbar una recepción que ya está hecha.
+            }
+          }
           responder(res, 200, {
             ok: true,
             protocolo: VERSION_PROTOCOLO,
