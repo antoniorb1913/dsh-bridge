@@ -206,10 +206,20 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 - [ ] La recepción del bundle cifrado llega en la T17 (`send`)
 
 ### T17 · Envío (`send`) con cifrado
-**Estado:** ⏳ Pendiente · **Depende de:** T16 · **Rama propuesta:** `feat/t17-envio`
+**Estado:** 👀 Esperando tu OK · **Depende de:** T16 · **Rama propuesta:** `feat/t17-envio`
+**Archivos:** `src/net/cifrado.js`, `src/net/cliente.js`, `src/net/servidor.js`, `bin/dsh-bridge.js`, `test/cifrado.test.js`, `test/red.test.js`
 
-- Cliente que empuja una o varias sesiones
-- Cifrado AES-256-GCM con clave derivada del código (scrypt + salt): el código nunca viaja
+- [x] **Cifrado con AES-256-GCM** y clave derivada del código con `scrypt` + `salt` aleatorio por envío: el código **no viaja** en ninguna petición
+- [x] Cifrado y descifrado **en streaming**, sin cargar 300 MB en memoria; un byte cambiado invalida el paquete (queda cubierto por el tag)
+- [x] `POST /recibir` en el servidor: guarda en temporal, descifra y llama al mismo `importarBundle` del ZIP (ruta, adjuntos y registro)
+- [x] Cliente `send`: empareja una vez y manda **varias conversaciones** con ese token; `--sesion` se puede repetir
+- [x] `serve` acepta `--workspace` (destino), y avisa de que sin él solo se puede listar
+- [x] Errores con código: 401 sin token, 400 paquete no descifrable, 400 sin destino, 409 si ya estaba instalada
+- [x] 16 tests nuevos (151 en total) y **transferencia real**: 4,1 MB / 2.530 eventos / 14 adjuntos en 543 ms, y **693 MB / 22.179 eventos / 559 adjuntos en 7 s** con el registro del destino válido y la ruta reescrita
+- [x] **Fallo corregido (el límite):** el tope por defecto era 512 MB y rechazaba justo la conversación del bar (693 MB). Ahora es **2 GB**, configurable con `--max <MB>`, y si el cliente declara el tamaño en la cabecera se rechaza **antes de mover un byte** (413 con el detalle)
+- [x] **Fallo corregido (el servidor se caía):** al pasarse del límite cerraba el fichero temporal y seguía recibiendo datos → `ERR_STREAM_DESTROYED` sin capturar y **el proceso moría**: cualquiera podía tumbar el receptor con un envío grande. Ahora la escritura está protegida, se atiende el error del stream y se drena la conexión. Test de regresión: envío de 20 KB con tope de 4 KB → 413 y el servidor sigue respondiendo
+- [x] **Memoria comprobada:** durante la transferencia de 693 MB los procesos node se quedaron en ~56-70 MB de RSS (el streaming funciona)
+- [ ] La interfaz web (T18) hará esto mismo desde el navegador
 
 ### T18 · Interfaz web mínima
 **Estado:** ⏳ Pendiente · **Depende de:** T17 · **Rama propuesta:** `feat/t18-ui-web`

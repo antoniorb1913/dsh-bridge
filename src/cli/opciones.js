@@ -21,8 +21,13 @@ const CON_VALOR = new Set([
   "--tipos-ignorables",
   "--puerto",
   "--ip",
-  "--codigo"
+  "--codigo",
+  "--sesion",
+  "--max"
 ]);
+
+/** Opciones que se pueden repetir y se acumulan en una lista. */
+const MULTIVALOR = new Set(["--sesion"]);
 
 /** Opciones que son solo un interruptor. */
 const INTERRUPTORES = new Set([
@@ -80,7 +85,9 @@ export function parsearArgumentos(argv) {
     if (CON_VALOR.has(token)) {
       const valor = argv[indice + 1];
       if (valor === undefined || valor.startsWith("-")) throw new CliError(`la opción ${token} necesita un valor detrás`);
-      opciones[token.replace(/^-+/, "")] = valor;
+      const clave = token.replace(/^-+/, "");
+      if (MULTIVALOR.has(token)) opciones[clave] = [...(Array.isArray(opciones[clave]) ? opciones[clave] : []), valor];
+      else opciones[clave] = valor;
       indice += 1;
       continue;
     }

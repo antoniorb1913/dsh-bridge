@@ -11,14 +11,19 @@
  *   3. **El resto de la conversación va con un token** que se emite al
  *      emparejarse y caduca; sin token no se lista ni se recibe nada.
  *
- * Lo que hace aquí es solo HTTP y estado: el transporte del bundle (cifrado)
- * llega en la tarea siguiente.
+ * El bundle viaja **cifrado** (ver `cifrado.js`): aquí se guarda en un temporal,
+ * se descifra en streaming con el código y se instala con el mismo módulo que
+ * usa la importación desde ZIP. Nunca se escribe nada sin pasar el descifrado.
  */
 import crypto from "node:crypto";
+import fs from "node:fs";
 import http from "node:http";
 import os from "node:os";
+import path from "node:path";
 
+import { importarBundle, ImportError } from "../core/import.js";
 import { listSessions } from "../core/sessions.js";
+import { CifradoError, descifrarArchivo } from "./cifrado.js";
 
 /** Error del servidor: puerto ocupado, código mal formado, etc. */
 export class ServidorError extends Error {
@@ -107,10 +112,59 @@ async function leerJson(req) {
 }
 
 /**
+ * Guarda el cuerpo de la petición en un fichero, sin cargarlo en memoria.
+ *
+ * Cualquier fallo (tamaño, conexión cortada, disco) cancela la escritura y
+ * rechaza; **nunca** se escribe en un stream ya cerrado, que es lo que tumbaba
+ * el proceso con un envío demasiado grande.
+ *
+ * @returns {Promise<number>} bytes escritos
+ */
+function recibirArchivo(req, destino, maximo) {
+  return new Promise((resolver, rechazar) => {
+    const salida = fs.createWriteStream(destino);
+    let total = 0;
+    let fallado = false;
+
+    const fallar = (error) => {
+      if (fallado) return;
+      fallado = true;
+      if (!salida.destroyed) salida.destroy();
+      rechazar(error);
+    };
+
+    salida.on("error", (error) => fallar(new ServidorError(`no se pudo guardar el bundle: ${error.message}`)));
+
+    req.on("data", (trozo) => {
+      if (fallado) return;
+      total += trozo.length;
+      if (total > maximo) {
+        fallar(new ServidorError(`el bundle supera el límite de ${Math.round(maximo / (1024 * 1024))} MB`));
+        req.resume();
+        return;
+      }
+      if (!salida.writable) {
+        fallar(new ServidorError("el destino del bundle ya no acepta datos"));
+        return;
+      }
+      salida.write(trozo);
+    });
+    req.on("error", (error) => fallar(new ServidorError(`la conexión se cortó: ${error.message}`)));
+    req.on("aborted", () => fallar(new ServidorError("el envío se interrumpió")));
+    req.on("end", () => {
+      if (fallado) return;
+      salida.end(() => resolver(total));
+    });
+  });
+}
+
+/**
  * Servidor de recepción.
  *
  * @param {{home: string, puerto?: number, host?: string, codigo?: string,
- *          ttlMs?: number, intentosMax?: number, ahora?: () => number}} opciones
+ *          ttlMs?: number, intentosMax?: number, ahora?: () => number,
+ *          workspace?: string, forzar?: boolean, maxBytes?: number,
+ *          tiposConocidos?: Set<string>}} opciones
  */
 export function crearServidor(opciones) {
   const home = opciones.home;
@@ -122,23 +176,37 @@ export function crearServidor(opciones) {
   const ttlMs = opciones.ttlMs ?? 10 * 60 * 1000;
   const intentosMax = opciones.intentosMax ?? 5;
   const ahora = opciones.ahora ?? (() => Date.now());
+  const maxBytes = opciones.maxBytes ?? 2 * 1024 * 1024 * 1024;
+  const workspace = opciones.workspace;
 
   const codigoInicial = opciones.codigo ?? crearCodigo();
   if (!/^\d{6}$/.test(codigoInicial)) throw new ServidorError(`el código debe tener 6 dígitos: ${codigoInicial}`);
 
   const estado = {
+    /** El código se guarda aunque se canjee: hace falta para descifrar. */
     codigo: codigoInicial,
+    codigoCanjeado: false,
     codigoExpira: ahora() + ttlMs,
     intentos: 0,
     bloqueado: false,
     token: undefined,
     tokenExpira: 0,
-    emparejado: false
+    emparejado: false,
+    ultimoRecibido: undefined
+  };
+
+  const tokenValido = (req) => {
+    const autorizacion = String(req.headers.authorization ?? "");
+    const token = autorizacion.startsWith("Bearer ") ? autorizacion.slice(7) : "";
+    if (estado.token === undefined || token === "") return false;
+    if (ahora() > estado.tokenExpira) return false;
+    return codigoIgual(estado.token, token);
   };
 
   const servidor = http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url ?? "/", "http://localhost");
+
       if (req.method === "GET" && url.pathname === "/estado") {
         responder(res, 200, {
           app: "dsh-bridge",
@@ -146,6 +214,7 @@ export function crearServidor(opciones) {
           emparejado: estado.emparejado,
           bloqueado: estado.bloqueado,
           intentosRestantes: Math.max(0, intentosMax - estado.intentos),
+          aceptaBundles: typeof workspace === "string",
           expira: new Date(estado.codigoExpira).toISOString()
         });
         return;
@@ -154,6 +223,11 @@ export function crearServidor(opciones) {
       if (req.method === "POST" && url.pathname === "/emparejar") {
         if (estado.bloqueado) {
           responder(res, 423, { error: "bloqueado", detalle: "demasiados intentos: reinicia el servidor para generar un código nuevo" });
+          return;
+        }
+        if (estado.codigoCanjeado) {
+          // El código se conserva para descifrar, pero ya no empareja a nadie más.
+          responder(res, 401, { error: "codigo-usado", detalle: "ese código ya se usó: reinicia el servidor para generar otro" });
           return;
         }
         if (ahora() > estado.codigoExpira) {
@@ -171,8 +245,9 @@ export function crearServidor(opciones) {
           });
           return;
         }
-        // Un solo uso: el código muere al emparejarse.
-        estado.codigo = "";
+        // El código no se puede volver a usar para emparejarse, pero se
+        // conserva para derivar la clave de descifrado del envío.
+        estado.codigoCanjeado = true;
         estado.emparejado = true;
         estado.token = crypto.randomBytes(32).toString("hex");
         estado.tokenExpira = ahora() + ttlMs;
@@ -181,9 +256,7 @@ export function crearServidor(opciones) {
       }
 
       if (req.method === "GET" && url.pathname === "/sesiones") {
-        const autorizacion = String(req.headers.authorization ?? "");
-        const token = autorizacion.startsWith("Bearer ") ? autorizacion.slice(7) : "";
-        if (estado.token === undefined || token === "" || ahora() > estado.tokenExpira || !codigoIgual(estado.token, token)) {
+        if (!tokenValido(req)) {
           responder(res, 401, { error: "no-autorizado" });
           return;
         }
@@ -196,6 +269,71 @@ export function crearServidor(opciones) {
           fecha: sesion.mtime
         }));
         responder(res, 200, { protocolo: VERSION_PROTOCOLO, sesiones });
+        return;
+      }
+
+      if (req.method === "POST" && url.pathname === "/recibir") {
+        if (!tokenValido(req)) {
+          responder(res, 401, { error: "no-autorizado" });
+          req.resume();
+          return;
+        }
+        if (typeof workspace !== "string" || workspace === "") {
+          responder(res, 400, { error: "sin-destino", detalle: "arranca `serve` con --workspace <carpeta> para poder recibir" });
+          req.resume();
+          return;
+        }
+
+        const temporal = fs.mkdtempSync(path.join(os.tmpdir(), "dsh-bridge-recibe-"));
+        const cifrado = path.join(temporal, "bundle.dshc");
+        const zip = path.join(temporal, "bundle.zip");
+
+        // Si el cliente ya dice cuánto pesa y no cabe, se corta antes de mover un byte.
+        const declarado = Number(req.headers["content-length"]);
+        if (Number.isFinite(declarado) && declarado > maxBytes) {
+          responder(res, 413, {
+            error: "demasiado-grande",
+            detalle: `el bundle pesa ${Math.round(declarado / (1024 * 1024))} MB y el servidor acepta hasta ${Math.round(maxBytes / (1024 * 1024))} MB`,
+            maxMB: Math.round(maxBytes / (1024 * 1024))
+          });
+          req.resume();
+          fs.rmSync(temporal, { recursive: true, force: true });
+          return;
+        }
+
+        try {
+          await recibirArchivo(req, cifrado, maxBytes);
+          await descifrarArchivo(cifrado, zip, estado.codigo);
+          const resultado = importarBundle(zip, {
+            home,
+            workspace,
+            tiposConocidos: opciones.tiposConocidos,
+            appAbierta: false,
+            forzar: opciones.forzar === true
+          });
+          estado.ultimoRecibido = { sesion: resultado.sesionId, cuando: new Date().toISOString() };
+          responder(res, 200, {
+            ok: true,
+            protocolo: VERSION_PROTOCOLO,
+            sesion: resultado.sesionId,
+            eventos: resultado.eventos,
+            workspace: resultado.workspace,
+            adjuntos: { copiados: resultado.adjuntos.copiados, yaEstaban: resultado.adjuntos.yaExistian, faltan: resultado.adjuntos.faltan.length },
+            avisos: resultado.avisos
+          });
+        } catch (error) {
+          if (error instanceof CifradoError) {
+            responder(res, 400, { error: "descifrado", detalle: error.message });
+            return;
+          }
+          if (error instanceof ImportError) {
+            responder(res, 409, { error: "importacion", detalle: error.message });
+            return;
+          }
+          throw error;
+        } finally {
+          fs.rmSync(temporal, { recursive: true, force: true });
+        }
         return;
       }
 
@@ -212,15 +350,16 @@ export function crearServidor(opciones) {
   });
 
   return {
-    /** Datos que se enseñan por consola (el código solo aquí). */
+    /** Datos que se enseñan por consola (el código desaparece al canjearlo). */
     get datos() {
       return {
         host,
         puerto: servidor.address()?.port ?? puertoPedido,
-        codigo: estado.codigo,
+        codigo: estado.codigoCanjeado ? "" : estado.codigo,
         expira: new Date(estado.codigoExpira),
         ttlMs,
-        emparejado: estado.emparejado
+        emparejado: estado.emparejado,
+        workspace
       };
     },
     get estado() {
@@ -229,7 +368,8 @@ export function crearServidor(opciones) {
         bloqueado: estado.bloqueado,
         intentos: estado.intentos,
         codigoExpira: estado.codigoExpira,
-        tokenExpira: estado.tokenExpira
+        tokenExpira: estado.tokenExpira,
+        ultimoRecibido: estado.ultimoRecibido
       };
     },
     /** Arranca y devuelve el puerto real (útil con puerto 0). */

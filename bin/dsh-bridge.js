@@ -27,6 +27,7 @@ import { leerRegistro, validarRegistro } from "../src/core/registry.js";
 import { attachmentHashes, listSessions } from "../src/core/sessions.js";
 import { decodeLogBuffer } from "../src/core/zstd.js";
 import { crearServidor, ipLocal } from "../src/net/servidor.js";
+import { enviarSesiones } from "../src/net/cliente.js";
 import {
   SeleccionError,
   formatearBytes,
@@ -233,20 +234,48 @@ async function comandoServe(opciones) {
   const puerto = opciones.puerto === undefined ? 8787 : Number(opciones.puerto);
   if (!Number.isInteger(puerto) || puerto < 0 || puerto > 65535) throw new CliError(`puerto no válido: ${opciones.puerto}`);
 
+  const { tipos } = leerTipos(opciones);
   const host = opciones.red === true ? "0.0.0.0" : "127.0.0.1";
-  const servidor = crearServidor({ home, puerto, host, codigo: opciones.codigo });
+  const workspace = opciones.workspace === undefined ? undefined : limpiarRuta(opciones.workspace);
+  if (workspace !== undefined) {
+    try {
+      fs.statSync(workspace);
+    } catch {
+      throw new CliError(`la carpeta de destino no existe: ${workspace}`);
+    }
+  }
+
+  let maxBytes;
+  if (opciones.max !== undefined) {
+    const maxMB = Number(opciones.max);
+    if (!Number.isFinite(maxMB) || maxMB <= 0) throw new CliError(`--max debe ser un número de MB mayor que 0: ${opciones.max}`);
+    maxBytes = Math.round(maxMB * 1024 * 1024);
+  }
+
+  const servidor = crearServidor({
+    home,
+    puerto,
+    host,
+    codigo: opciones.codigo,
+    workspace,
+    forzar: opciones.forzar === true,
+    tiposConocidos: tipos,
+    maxBytes
+  });
   const puertoReal = await servidor.iniciar();
   const datos = servidor.datos;
   const ip = host === "0.0.0.0" ? ipLocal() ?? "127.0.0.1" : "127.0.0.1";
 
   escribir("");
   escribir("  dsh-bridge · recibiendo conversaciones");
-  escribir("  " + "─".repeat(52));
+  escribir("  " + "─".repeat(58));
   escribir(`  Dirección : http://${ip}:${puertoReal}`);
   escribir(`  Código    : ${datos.codigo}   (un solo uso, caduca ${formatearFecha(datos.expira)})`);
+  escribir(`  Destino   : ${workspace ?? "(sin --workspace: solo se puede listar, no recibir)"}`);
+  escribir(`  Límite    : ${formatearBytes(maxBytes ?? 2 * 1024 * 1024 * 1024)} por bundle`);
   escribir("");
   escribir("  En el otro equipo:");
-  escribir(`    dsh-bridge send --ip ${ip} --puerto ${puertoReal}`);
+  escribir(`    dsh-bridge send --ip ${ip} --puerto ${puertoReal} --codigo ${datos.codigo} --sesion <id>`);
   escribir("");
   if (host === "0.0.0.0") {
     aviso("escuchando en toda la red local: cualquiera que acierte el código podría enviar una conversación");
@@ -254,6 +283,7 @@ async function comandoServe(opciones) {
   } else {
     aviso("solo accesible desde este equipo; usa --red para abrirlo a la red local");
   }
+  if (workspace === undefined) aviso("sin --workspace no se puede recibir: arranca de nuevo indicando la carpeta del proyecto");
   escribir("  Ctrl+C para parar.");
   escribir("");
 
@@ -266,6 +296,42 @@ async function comandoServe(opciones) {
     process.once("SIGINT", parar);
     process.once("SIGTERM", parar);
   });
+  return 0;
+}
+
+/** Envía una o varias conversaciones al equipo que está escuchando. */
+async function comandoSend(opciones) {
+  const home = resolveHome(opciones["dsh-home"]);
+  const ip = limpiarRuta(opciones.ip);
+  if (ip === "") throw new CliError("indica la IP del otro equipo con --ip (la enseña el comando serve)");
+  const puerto = opciones.puerto === undefined ? 8787 : Number(opciones.puerto);
+  if (!Number.isInteger(puerto) || puerto < 1 || puerto > 65535) throw new CliError(`puerto no válido: ${opciones.puerto}`);
+  const codigo = limpiarRuta(opciones.codigo);
+  if (!/^\d{6}$/.test(codigo)) throw new CliError("el código son 6 dígitos (--codigo 482913)");
+
+  const sesiones = Array.isArray(opciones.sesion) ? opciones.sesion : opciones.sesion === undefined ? [] : [opciones.sesion];
+  if (sesiones.length === 0) throw new CliError("indica qué conversación enviar con --sesion <id> (el id sale en `list`)");
+
+  const { tipos, origen } = leerTipos(opciones);
+  escribir(`emparejando con ${ip}:${puerto}…`);
+  const { envios } = await enviarSesiones({
+    home,
+    sesiones,
+    ip,
+    puerto,
+    codigo,
+    tiposConocidos: tipos,
+    origenCompat: origen,
+    alEmpezar: (sesion) => escribir(`enviando ${sesion}…`)
+  });
+
+  escribir("");
+  for (const envio of envios) {
+    ok(`«${envio.titulo}» llegó a ${envio.respuesta.workspace}`);
+    escribir(`  eventos   : ${envio.respuesta.eventos}`);
+    escribir(`  adjuntos  : ${envio.respuesta.adjuntos?.copiados ?? 0} copiados, ${envio.respuesta.adjuntos?.yaEstaban ?? 0} ya estaban`);
+    escribir(`  tamaño    : ${formatearBytes(envio.zipBytes)} en claro, ${formatearBytes(envio.cifradoBytes)} cifrado`);
+  }
   return 0;
 }
 
@@ -491,9 +557,7 @@ async function principal(argv) {
     case "serve":
       return comandoServe(opciones);
     case "send":
-      aviso("«send» llega en la próxima tarea (T17): enviar el ZIP cifrado por la red");
-      escribir("de momento: exporta un ZIP y llévalo al otro equipo");
-      return 2;
+      return comandoSend(opciones);
     case "menu":
       return menu(home, opciones);
     default:
