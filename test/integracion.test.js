@@ -26,7 +26,12 @@ const BIN = path.join(RAIZ, "bin", "dsh-bridge.js");
 /** Ejecuta la CLI como proceso aparte y devuelve stdout, stderr y código. */
 function cli(argumentos) {
   try {
-    const stdout = execFileSync(process.execPath, [BIN, ...argumentos], { encoding: "utf8" });
+    // Los almacenes son falsos: no tiene sentido que la comprobación de «app
+    // abierta» mire el equipo donde corren las pruebas.
+    const stdout = execFileSync(process.execPath, [BIN, ...argumentos], {
+      encoding: "utf8",
+      env: { ...process.env, DSH_BRIDGE_SKIP_APP_CHECK: "1", DSH_BRIDGE_SKIP_FIREWALL_CHECK: "1" }
+    });
     return { stdout, stderr: "", codigo: 0 };
   } catch (error) {
     return {
@@ -212,6 +217,27 @@ test("la CLI importa en seco sin tocar el disco", () => {
     assert.match(seco.stdout, /en seco: no se ha escrito nada/);
     assert.equal(fs.existsSync(sessionsRoot(destino.home)), false);
     assert.equal(fs.existsSync(registryPath(destino.home)), false);
+  } finally {
+    for (const dir of [origen.home, destino.home, zips]) fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("reimportar reemplaza solo y deja copia del anterior", () => {
+  const origen = crearCasaFalsa();
+  const destino = destinoVacio();
+  const zips = carpetaTemporal("dsh-bridge-zips-");
+  try {
+    const exportado = exportarSesion(origen.home, origen.sesiones.texto, zips, { tiposConocidos: TIPOS_CONOCIDOS_020_RC2 });
+    const primera = cli(["import", exportado.ruta, "--dsh-home", destino.home, "--workspace", destino.workspace]);
+    assert.equal(primera.codigo, 0, primera.stderr);
+    assert.match(primera.stdout, /importada en/);
+
+    // La segunda vez no hay banderas que recordar: se reemplaza y avisa.
+    const segunda = cli(["import", exportado.ruta, "--dsh-home", destino.home, "--workspace", destino.workspace]);
+    assert.equal(segunda.codigo, 0, segunda.stderr);
+    assert.match(segunda.stdout, /actualizada en/, "debe decir que la ha actualizado");
+    assert.match(segunda.stdout, /la sesión anterior se guardó como/, "y que hay copia de la anterior");
+    assert.equal(listSessions(destino.home).length, 1, "sigue habiendo una sola copia");
   } finally {
     for (const dir of [origen.home, destino.home, zips]) fs.rmSync(dir, { recursive: true, force: true });
   }

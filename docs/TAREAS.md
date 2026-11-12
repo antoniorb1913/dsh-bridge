@@ -299,6 +299,29 @@ Tablero de trabajo. **Una sola** tarea en 🔧 En curso a la vez y nunca se avan
 
 ## Fase 6 — Arreglos que encontró el CI
 
+### T28 · Avisar cuando el firewall impide recibir
+**Estado:** 👀 Esperando tu OK · **Depende de:** T27 · **Rama propuesta:** `fix/reimportar-zip` (la misma)
+**Pregunta del usuario (2026-11-12): «del pc al portátil sí lo puedo pasar por red, del portátil al pc no; busco en la red y no sale»**
+**Archivos:** `src/core/firewall.js`, `bin/dsh-bridge.js`, `test/firewall.test.js`, `docs/TAREAS.md`, `docs/HISTORIAL.md`
+
+- [x] **Causa encontrada:** en el PC había permiso de entrada para Node **solo en el perfil público** y para **otro `node.exe`** (el de `…\herd\bin\nvm\…`), no para el que usa el programa. Resultado: el PC podía enviar (salida) y no recibir (entrada), sin ningún mensaje
+- [x] `doctor` comprueba el firewall (¿hay regla de entrada que cubra el perfil activo?) y, si no la hay, imprime **el comando exacto** para ejecutar como administrador
+- [x] El banner de `serve --red` avisa de lo mismo antes de dejar al usuario esperando conexiones que no van a llegar
+- [x] Reglas acotadas: solo ese `node.exe`, solo TCP 8787-8790 y UDP 8788, solo red privada; texto para quitarlas incluido
+- [x] Interruptor `DSH_BRIDGE_SKIP_FIREWALL_CHECK=1` para scripts y pruebas
+- [x] 6 tests nuevos (195 en total): perfiles, reglas vacías, fallo de PowerShell, comando acotado
+
+### T27 · Importar un ZIP ya importado: reemplaza solo
+**Estado:** 👀 Esperando tu OK · **Depende de:** T26 · **Rama propuesta:** `fix/reimportar-zip`
+**Petición del usuario (2026-11-12): «la idea es que cuando lo importe él solo compruebe si existe la carpeta; si el chat ya está, que borre el que está y ponga el nuevo; y si no está la carpeta, que la cree»**
+**Archivos:** `bin/dsh-bridge.js`, `src/core/import.js`, `test/integracion.test.js`, `docs/TAREAS.md`, `docs/HISTORIAL.md`
+
+- [x] **Sin banderas:** importar siempre hace lo mismo. Si la conversación ya está en este equipo, **se reemplaza** (la del ZIP es la buena) y la anterior queda como `.bak`; si no está, se instala
+- [x] **Carpeta del origen:** si existe en este equipo se usa tal cual; si no, se **crea** en `Documents\recibidas\<nombre del proyecto>` (ya venía de la T25)
+- [x] **Nunca duplicada:** tras dos importaciones sigue habiendo una sola conversación, una sola ficha de proyecto y la copia `.bak` del histórico anterior
+- [x] **`--forzar` ya no hace falta** (se acepta y no estorba); esto mismo hace la recepción por red desde la T23
+- [x] 195 pruebas (actualizada la de reimportar: la segunda vez dice «actualizada», deja `.bak` y no duplica)
+
 ### T26 · Endurecimiento: ZIP bomba, DNS rebinding y fuerza bruta
 **Estado:** ✅ Completada (2026-11-07) · **Depende de:** T25 · **Rama:** `fix/nombre-proyecto` · **Commit:** `fix: nombre del proyecto al importar, topes de ZIP, Host local y código de 8 dígitos`
 **Pregunta del usuario (2026-11-07): «¿el proyecto es seguro contra ataques, inyecciones, etc.?»**

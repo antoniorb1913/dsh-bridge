@@ -27,6 +27,7 @@ import { leerRegistro, validarRegistro } from "../src/core/registry.js";
 import { attachmentHashes, listSessions } from "../src/core/sessions.js";
 import { decodeLogBuffer } from "../src/core/zstd.js";
 import { elegirArchivo, elegirCarpeta } from "../src/cli/dialogos.js";
+import { comandoSugerido, estadoFirewall } from "../src/core/firewall.js";
 import { crearServidor, ipLocal } from "../src/net/servidor.js";
 import { enviarSesiones } from "../src/net/cliente.js";
 import { crearUiServidor } from "../src/net/ui.js";
@@ -170,11 +171,14 @@ async function comandoImport(posicionales, opciones) {
   escribir("");
   if (plan.compatibilidad.total > 0) aviso(`se marcarán ${plan.compatibilidad.total} sucesos como ignorables`);
 
+  // Reemplazo automático: si esa conversación ya está en este equipo se
+  // sustituye por la que llega (la del ZIP es la buena) y la anterior queda
+  // como `.bak`. Así importar es siempre el mismo gesto, sin banderas.
   const resultado = importarBundle(archivo, {
     home,
     workspace,
     title: opciones.titulo,
-    forzar: opciones.forzar === true,
+    forzar: true,
     seco: opciones.seco === true,
     tiposConocidos: tipos
   });
@@ -186,7 +190,7 @@ async function comandoImport(posicionales, opciones) {
     escribir(`  reemplaza     : ${resultado.reemplaza ? "sí" : "no"}`);
     escribir(`  adjuntos      : ${resultado.adjuntos.porCopiar}`);
   } else {
-    ok(`importada en ${resultado.workspace}`);
+    ok(`${resultado.reemplaza === true ? "actualizada" : "importada"} en ${resultado.workspace}`);
     escribir(`  log        : ${resultado.rutaLog}`);
     escribir(`  eventos    : ${resultado.eventos}`);
     escribir(`  adjuntos   : ${resultado.adjuntos.copiados} copiados, ${resultado.adjuntos.yaExistian} ya estaban`);
@@ -204,6 +208,23 @@ function comandoDoctor(opciones) {
 
   lineas.push(`datos de DSH : ${home}`);
   lineas.push(`app abierta  : ${isAppRunning() ? "sí (ciérrala para importar)" : "no"}`);
+
+  // Firewall: el fallo clásico es tener permiso de entrada solo para el perfil
+  // público (o para otro node.exe), y entonces el equipo envía pero no recibe.
+  const firewall = estadoFirewall();
+  if (firewall.comprobable) {
+    const perfiles = (firewall.perfiles ?? []).join(", ") || "?";
+    lineas.push(`firewall     : ${firewall.permite ? "permite recibir" : `✖ NO permite recibir en red ${perfiles}`}`);
+    if (!firewall.permite) {
+      problemas.push("el firewall no deja entrar conexiones al receptor");
+      escribir("");
+      aviso("para recibir por red, ejecuta esto en PowerShell como administrador:");
+      for (const orden of comandoSugerido()) escribir(`    ${orden}`);
+      escribir("");
+    }
+  } else {
+    lineas.push("firewall     : no comprobable en este sistema");
+  }
 
   const asar = findAppAsar();
   if (asar === undefined) {
@@ -472,7 +493,14 @@ async function comandoServe(opciones) {
   escribir("");
   if (host === "0.0.0.0") {
     aviso("escuchando en toda la red local: cualquiera que acierte el código podría enviar una conversación");
-    aviso("si Windows pregunta por el firewall, permite solo redes privadas");
+    const firewall = estadoFirewall();
+    if (firewall.comprobable && !firewall.permite) {
+      aviso("PERO el firewall no deja entrar conexiones: el otro equipo no podrá conectar");
+      aviso("ejecuta esto en PowerShell como administrador (una vez):");
+      for (const orden of comandoSugerido()) escribir(`    ${orden}`);
+    } else {
+      aviso("si Windows pregunta por el firewall, permite solo redes privadas");
+    }
   } else {
     aviso("solo accesible desde este equipo; usa --red para abrirlo a la red local");
   }
@@ -768,14 +796,17 @@ async function menuImportar(rl, home, tipos) {
   }
 
   try {
-    const resultado = importarBundle(archivo, { home, workspace, tiposConocidos: tipos, appAbierta: false });
-    ok(`importada en ${resultado.workspace}`);
-    escribir(`  log      : ${resultado.rutaLog}`);
-    escribir(`  adjuntos : ${resultado.adjuntos.copiados} copiados, ${resultado.adjuntos.yaExistian} ya estaban`);
-    escribir(`  workspace: ${resultado.registro.creado ? "creado" : "ya existía"}`);
-    for (const nota of resultado.avisos) aviso(nota);
-  } catch (error) {
-    mal(error instanceof Error ? error.message : String(error));
+    try {
+      // Igual que en la CLI: si ya estaba, se reemplaza (con copia del anterior).
+      const resultado = importarBundle(archivo, { home, workspace, tiposConocidos: tipos, appAbierta: false, forzar: true });
+      ok(`${resultado.reemplaza === true ? "actualizada" : "importada"} en ${resultado.workspace}`);
+      escribir(`  log      : ${resultado.rutaLog}`);
+      escribir(`  adjuntos : ${resultado.adjuntos.copiados} copiados, ${resultado.adjuntos.yaExistian} ya estaban`);
+      escribir(`  workspace: ${resultado.registro.creado ? "creado" : "ya existía"}`);
+      for (const nota of resultado.avisos) aviso(nota);
+    } catch (error) {
+      mal(error instanceof Error ? error.message : String(error));
+    }
   } finally {
     if (abierta === false && isAppRunning() === false) {
       if (abrirApp()) escribir("volviendo a abrir DeepSeek Harness…");

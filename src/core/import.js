@@ -205,7 +205,10 @@ export function importarBundle(archivoZip, opciones) {
   const sessionId = header.id;
   const yaInstalada = logInstalado(home, sessionId);
   if (yaInstalada !== undefined && opciones.forzar !== true) {
-    throw new ImportError(`la sesión ya está instalada en este equipo (${yaInstalada}). Usa --forzar para reemplazarla (se guarda copia)`);
+    throw new ImportError(
+      `la sesión ya está instalada en este equipo (${yaInstalada}). Para reemplazarla hay que pedirlo con --forzar ` +
+        "(se guarda copia de la anterior)"
+    );
   }
 
   // Con la app abierta el registro se pierde al cerrarla: se comprueba antes de escribir nada.

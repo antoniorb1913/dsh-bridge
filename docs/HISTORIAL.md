@@ -1,4 +1,4 @@
-﻿# HISTORIAL.md — dsh-bridge
+# HISTORIAL.md — dsh-bridge
 
 Registro cronológico de tareas terminadas. **Se escribe al recibir el «sí» a «¿Todo OK?» (REGLA 1, paso 6), sin excepciones.**
 
@@ -1012,5 +1012,69 @@ El usuario preguntó si el proyecto es seguro. Lo que estaba bien, estaba bien (
 2. `serve` → el código que sale tiene **8 dígitos**; `send --codigo 123456` responde «el código son 8 dígitos».
 3. Envío real con código de 8 dígitos: 2.530 eventos y 14 adjuntos, correcto.
 4. `curl -H "Host: evil.com" http://127.0.0.1:8790/` → 403.
+
+---
+
+## 2026-11-12 · T27 — Importar un ZIP ya importado: reemplaza solo
+
+**Estado:** 👀 Esperando tu OK
+**Rama:** `fix/reimportar-zip`
+**Commit:** `fix: importar reemplaza solo y avisa del firewall`
+**Archivos:** `bin/dsh-bridge.js`, `src/core/import.js`, `test/integracion.test.js`, `docs/TAREAS.md`, `docs/HISTORIAL.md`
+
+### 1. ¿Qué he realizado?
+
+Importar un ZIP hace ya siempre lo mismo, sin banderas: si esa conversación **no está**, se instala; si **ya está**, se reemplaza por la del ZIP (que es la buena) y la anterior queda como `.bak-…`. Si la carpeta del proyecto no existe en este equipo, se crea en `Documents\recibidas\<nombre>`; si existe, se usa tal cual.
+
+### 2. ¿Por qué?
+
+El usuario tropezó con «usa --forzar» y no había dónde ponerlo. Lo que quiere —y lo que tiene sentido— es que importar sea un solo gesto: la copia que traes manda. Antes el reemplazo había que pedirlo, y el mensaje ni siquiera decía cómo; ahora es automático y reversible, porque el histórico anterior se conserva al lado.
+
+### 3. ¿Dónde verlo en el código?
+
+- `bin/dsh-bridge.js` (`comandoImport`) — `forzar: true` y mensaje «importada/actualizada».
+- `bin/dsh-bridge.js` (`menuImportar`) — el mismo comportamiento desde el menú, sin preguntas.
+- `src/core/import.js:208` — copia `.bak` y `reemplaza` en el resultado.
+- `test/integracion.test.js` — reimportar dice «actualizada», deja `.bak` y no duplica.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 195` / `fail 0`**.
+2. Importar un ZIP dos veces: la segunda dice **«✔ actualizada»**, avisa de la copia y sigue habiendo **una sola** conversación.
+3. Si la carpeta del origen no existe: `! esa carpeta no existe en este equipo: se crea …\Documents\recibidas\<proyecto>`.
+4. Ya no hace falta `--forzar` (se sigue aceptando, sin efecto).
+
+---
+
+## 2026-11-12 · T28 — Avisar cuando el firewall impide recibir
+
+**Estado:** 👀 Esperando tu OK
+**Rama:** `fix/reimportar-zip` (misma que T27)
+**Commit:** `fix: reimportar un ZIP ya importado y avisar del firewall`
+**Archivos:** `src/core/firewall.js`, `bin/dsh-bridge.js`, `test/firewall.test.js`, `docs/TAREAS.md`, `docs/HISTORIAL.md`
+
+### 1. ¿Qué he realizado?
+
+El usuario contó que del PC al portátil envía bien, pero del portátil al PC no, y que «buscar en la red» no encontraba nada. La causa estaba en el equipo que recibe: Windows tenía permiso de entrada para Node **solo en el perfil público** y para **otro** `node.exe` (el de `…\herd\bin\nvm\…`), no para `C:\Program Files\nodejs\node.exe`. Ahora `doctor` y el banner de `serve --red` lo detectan y enseñan el comando exacto (con el ejecutable real) para arreglarlo como administrador.
+
+### 2. ¿Por qué?
+
+El síntoma es de los que hacen perder una tarde: la salida funciona, la entrada no, y nada lo explica. La comprobación es de solo lectura y el arreglo va acotado a ese programa, esos puertos y el perfil privado, para no abrir la máquina de par en par.
+
+### 3. ¿Dónde verlo en el código?
+
+- `src/core/firewall.js:17-30` — `cubreAlgunPerfil` (puro).
+- `src/core/firewall.js:40-90` — `estadoFirewall`: perfiles activos y reglas que permiten este ejecutable.
+- `src/core/firewall.js:32-38` — `comandoSugerido`: las dos órdenes acotadas.
+- `bin/dsh-bridge.js` (`comandoDoctor`) — línea `firewall : …` y aviso con las órdenes.
+- `bin/dsh-bridge.js` (`comandoServe`) — mismo aviso en el banner con `--red`.
+- `test/firewall.test.js` — 6 pruebas sin tocar el sistema.
+
+### 4. ¿Cómo comprobar que funciona?
+
+1. `npm test` → **`pass 195` / `fail 0`**.
+2. `node bin/dsh-bridge.js doctor` → si el firewall no deja entrar, sale `firewall : ✖ NO permite recibir en red Private` y las dos órdenes.
+3. `serve --red` → el mismo aviso en el banner, antes de quedarse esperando.
+4. Tras ejecutar las órdenes como administrador y reiniciar `serve`, `doctor` debe decir `firewall : permite recibir`.
 
 _(Fin del historial.)_
